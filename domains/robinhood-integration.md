@@ -11,460 +11,208 @@ The Robinhood Integration domain provides read-only access to Robinhood brokerag
 2. **Portfolio Retrieval**: Fetch account balances and positions
 3. **Market Data**: Real-time quotes and historical prices
 4. **Transaction History**: Orders, dividends, and transfers
-5. **Watchlist Management**: Track user watchlists
+5. **Account Monitoring**: Track user positions and values
 6. **Data Transformation**: Convert to standardized data models
 
 ### Domain Boundaries
 - **Owns**: Robinhood API interactions, auth tokens, data transformation
-- **Does NOT Own**: Trading execution, account modifications, payment methods
+- **Does NOT Own**: Trading execution, account modifications, payment methods, portfolio aggregation
 
-## Architecture
-
-### Core Service
-```typescript
-class RobinhoodService {
-  // Authentication
-  async authenticate(credentials: Credentials): Promise<AuthToken>
-  async refreshToken(refreshToken: string): Promise<AuthToken>
-  async handleMFA(mfaCode: string): Promise<AuthToken>
-  async logout(): Promise<void>
-  
-  // Portfolio data
-  async getPortfolio(): Promise<Portfolio>
-  async getPositions(): Promise<Position[]>
-  async getCryptoPositions(): Promise<CryptoPosition[]>
-  async getAccountInfo(): Promise<AccountInfo>
-  
-  // Market data
-  async getQuotes(symbols: string[]): Promise<Quote[]>
-  async getHistoricalData(symbol: string, interval: Interval): Promise<HistoricalData>
-  async getMarketHours(): Promise<MarketHours>
-  
-  // Transactions
-  async getOrders(options?: OrderOptions): Promise<Order[]>
-  async getDividends(): Promise<Dividend[]>
-  async getTransfers(): Promise<Transfer[]>
-  
-  // Watchlists
-  async getWatchlists(): Promise<Watchlist[]>
-  async getWatchlistItems(id: string): Promise<WatchlistItem[]>
-}
-```
-
-## Authentication Flow
+## Authentication Strategy
 
 ### OAuth2 Implementation
-```typescript
-interface AuthenticationFlow {
-  // Step 1: Initial login
-  login(username: string, password: string): Promise<AuthResponse>
-  
-  // Step 2: MFA if required
-  verifyMFA(code: string, backupCode?: boolean): Promise<AuthResponse>
-  
-  // Step 3: Store tokens securely
-  storeTokens(tokens: TokenPair): Promise<void>
-  
-  // Step 4: Auto-refresh
-  setupTokenRefresh(refreshToken: string): void
-}
-
-interface TokenPair {
-  accessToken: string
-  refreshToken: string
-  expiresIn: number
-  scope: string[]
-}
-```
+- Username/password authentication
+- Multi-factor authentication (MFA) support
+- Secure token storage
+- Automatic token refresh
+- Session management
 
 ### Security Measures
-```typescript
-class TokenManager {
-  // Encrypted storage
-  private encryptToken(token: string): string
-  private decryptToken(encrypted: string): string
-  
-  // Token lifecycle
-  isTokenValid(): boolean
-  getTimeUntilExpiry(): number
-  scheduleRefresh(): void
-  
-  // Secure cleanup
-  clearTokens(): void
-}
-```
+- Encrypted credential storage
+- Token expiration handling
+- Rate limit compliance
+- API key rotation support
 
-## Data Models
+## Data Fetching Capabilities
 
-### Account Models
-```typescript
-interface RobinhoodAccount {
-  accountNumber: string
-  type: 'cash' | 'margin'
-  buyingPower: number
-  cashBalance: number
-  portfolioValue: number
-  dayTradeCount: number
-  createdAt: Date
-  status: AccountStatus
-}
+### Portfolio Data
+- Account balances (cash, buying power)
+- Stock positions and quantities
+- Cryptocurrency holdings
+- Options positions
+- Fractional shares
 
-interface Position {
-  symbol: string
-  name: string
-  quantity: number
-  averageBuyPrice: number
-  currentPrice: number
-  marketValue: number
-  todayReturn: number
-  totalReturn: number
-  percentChange: number
-}
+### Market Information
+- Real-time stock quotes
+- Cryptocurrency prices
+- Historical price data
+- Market hours and holidays
+- Extended hours data
 
-interface CryptoPosition {
-  symbol: string
-  name: string
-  quantity: number
-  costBasis: number
-  currentPrice: number
-  marketValue: number
-  currency: 'USD'
-}
-```
-
-### Market Data Models
-```typescript
-interface Quote {
-  symbol: string
-  lastPrice: number
-  bidPrice: number
-  askPrice: number
-  volume: number
-  marketCap: number
-  peRatio?: number
-  dividendYield?: number
-  fiftyTwoWeekHigh: number
-  fiftyTwoWeekLow: number
-  updatedAt: Date
-}
-
-interface HistoricalData {
-  symbol: string
-  interval: '5minute' | '10minute' | 'hour' | 'day' | 'week'
-  data: Candle[]
-}
-
-interface Candle {
-  timestamp: Date
-  open: number
-  high: number
-  low: number
-  close: number
-  volume: number
-}
-```
-
-### Transaction Models
-```typescript
-interface Order {
-  id: string
-  symbol: string
-  side: 'buy' | 'sell'
-  type: 'market' | 'limit' | 'stop'
-  quantity: number
-  price?: number
-  executedPrice?: number
-  status: OrderStatus
-  createdAt: Date
-  executedAt?: Date
-  fees: number
-}
-
-enum OrderStatus {
-  PENDING = 'pending',
-  PLACED = 'placed',
-  PARTIALLY_FILLED = 'partially_filled',
-  FILLED = 'filled',
-  CANCELLED = 'cancelled',
-  FAILED = 'failed'
-}
-
-interface Dividend {
-  symbol: string
-  amount: number
-  payDate: Date
-  recordDate: Date
-  rate: number
-  type: 'cash' | 'stock'
-}
-```
-
-## API Integration
-
-### Endpoint Management
-```typescript
-class RobinhoodAPI {
-  private baseURL = 'https://api.robinhood.com'
-  
-  // Endpoints
-  private endpoints = {
-    auth: '/api-token-auth/',
-    accounts: '/accounts/',
-    positions: '/positions/',
-    quotes: '/quotes/',
-    orders: '/orders/',
-    crypto: '/crypto/positions/'
-  }
-  
-  // Request handling
-  private async makeRequest<T>(
-    endpoint: string,
-    options?: RequestOptions
-  ): Promise<T> {
-    // Add auth headers
-    // Handle rate limiting
-    // Parse response
-    // Transform errors
-  }
-}
-```
-
-### Rate Limiting
-```typescript
-class RateLimiter {
-  private requestQueue: RequestQueue
-  private limits = {
-    requestsPerMinute: 60,
-    requestsPerHour: 1800,
-    concurrentRequests: 5
-  }
-  
-  async executeRequest<T>(
-    request: () => Promise<T>
-  ): Promise<T> {
-    await this.waitForSlot()
-    return this.withRetry(request)
-  }
-}
-```
+### Transaction History
+- Buy/sell orders
+- Dividend payments
+- Stock transfers
+- Cryptocurrency transactions
+- Corporate actions
 
 ## Data Transformation
 
-### To Data Models
-```typescript
-function transformToPortfolio(
-  account: RobinhoodAccount,
-  positions: Position[]
-): Portfolio {
-  return {
-    id: `robinhood-${account.accountNumber}`,
-    name: 'Robinhood Account',
-    owner: account.accountNumber,
-    assets: positions.map(transformPosition),
-    totalValue: {
-      amount: account.portfolioValue,
-      currency: 'USD',
-      timestamp: new Date()
-    },
-    lastUpdated: new Date(),
-    sources: [{
-      id: 'robinhood',
-      type: IntegrationType.CEX,
-      name: 'Robinhood',
-      status: IntegrationStatus.CONNECTED,
-      connectedAt: new Date(),
-      lastSync: new Date()
-    }]
-  }
-}
+### Unified Model Mapping
+- Stocks to unified Asset model
+- Crypto positions to standard format
+- Orders to Transaction model
+- Dividends to income events
 
-function transformPosition(position: Position): Asset {
-  return {
-    id: `robinhood-${position.symbol}`,
-    symbol: position.symbol,
-    name: position.name,
-    type: AssetType.STOCK,
-    balance: {
-      amount: BigInt(position.quantity * 1e8), // Convert to integer
-      decimals: 8,
-      formatted: position.quantity.toString()
-    },
-    value: {
-      amount: position.marketValue,
-      currency: 'USD',
-      timestamp: new Date()
-    },
-    metadata: {
-      averageBuyPrice: position.averageBuyPrice,
-      todayReturn: position.todayReturn,
-      totalReturn: position.totalReturn
-    }
-  }
-}
-```
+### TradFi-Specific Metadata
+- Cost basis information
+- Realized/unrealized gains
+- Dividend yield data
+- Market cap and P/E ratios
+
+## Integration Patterns
+
+### Service Interface
+The domain exposes services for Robinhood data:
+
+#### Authentication Service
+- Handle login flow
+- Manage MFA challenges
+- Refresh expired tokens
+- Secure logout
+
+#### Portfolio Service
+- Fetch current positions
+- Calculate total values
+- Track performance metrics
+
+#### Market Data Service
+- Real-time quote updates
+- Historical price charts
+- Market status checks
+
+#### Transaction Service
+- Order history retrieval
+- Dividend tracking
+- Transfer monitoring
 
 ## Error Handling
 
-### Error Types
-```typescript
-enum RobinhoodErrorCode {
-  AUTHENTICATION_FAILED = 'AUTH_FAILED',
-  MFA_REQUIRED = 'MFA_REQUIRED',
-  INVALID_MFA = 'INVALID_MFA',
-  SESSION_EXPIRED = 'SESSION_EXPIRED',
-  RATE_LIMITED = 'RATE_LIMITED',
-  API_ERROR = 'API_ERROR',
-  NETWORK_ERROR = 'NETWORK_ERROR',
-  ACCOUNT_RESTRICTED = 'ACCOUNT_RESTRICTED'
-}
-
-class RobinhoodError extends Error {
-  code: RobinhoodErrorCode
-  statusCode?: number
-  details?: any
-}
-```
+### Common Error Scenarios
+- Authentication failures
+- MFA timeout
+- Rate limiting (429 errors)
+- API maintenance windows
+- Invalid symbols
+- Expired sessions
 
 ### Recovery Strategies
 1. **Auth Failures**: Prompt for re-authentication
-2. **MFA Issues**: Request new MFA code
-3. **Rate Limiting**: Implement backoff strategy
-4. **Session Expiry**: Auto-refresh tokens
-5. **API Changes**: Graceful degradation
+2. **Rate Limiting**: Exponential backoff
+3. **API Downtime**: Cached data fallback
+4. **Token Expiry**: Automatic refresh
+5. **Network Issues**: Retry with timeout
 
 ## Caching Strategy
 
 ### Cache Layers
-```typescript
-interface CacheConfig {
-  // Cache durations
-  quotes: 60_000,        // 1 minute
-  positions: 300_000,    // 5 minutes
-  account: 600_000,      // 10 minutes
-  historical: 3600_000,  // 1 hour
-  
-  // Cache size limits
-  maxEntries: 1000,
-  maxSizeKB: 10240
-}
+- Session cache for active data
+- Persistent cache for historical data
+- Quote cache with 15-second TTL
+- Position cache with 5-minute TTL
 
-class RobinhoodCache {
-  // Selective caching
-  shouldCache(endpoint: string): boolean
-  getCacheDuration(dataType: string): number
-  
-  // Cache invalidation
-  invalidateAccount(): void
-  invalidateQuotes(symbols?: string[]): void
-}
-```
+### Cache Invalidation
+- On successful trades
+- After market close
+- On corporate actions
+- Manual refresh trigger
 
-## Compliance & Legal
+## Rate Limiting
 
-### Regulatory Considerations
-1. **Read-Only Access**: Never execute trades
-2. **Data Privacy**: Encrypt sensitive data
-3. **Terms of Service**: Comply with Robinhood ToS
-4. **User Consent**: Explicit permission for data access
-5. **Data Retention**: Clear data on disconnect
+### API Limits
+- Respect Robinhood's rate limits
+- Request throttling implementation
+- Burst handling
+- Queue management
 
-### Disclaimers
-```typescript
-const DISCLAIMERS = {
-  marketData: "Market data is delayed by at least 15 minutes",
-  notAdvice: "This integration does not provide investment advice",
-  accuracy: "Data accuracy depends on Robinhood's API",
-  unofficial: "This is not an official Robinhood integration"
-}
-```
+### Optimization Strategies
+- Batch symbol quotes
+- Minimize authentication calls
+- Cache frequently accessed data
+- Use webhooks where available
 
 ## Testing Strategy
 
-### Unit Tests
-```typescript
-describe('RobinhoodService', () => {
-  test('transforms positions correctly', () => {
-    const position = mockPosition()
-    const asset = transformPosition(position)
-    expect(asset.symbol).toBe(position.symbol)
-  })
-  
-  test('handles auth failure gracefully', async () => {
-    // Mock failed authentication
-    // Verify error handling
-  })
-})
-```
+### Test Coverage Areas
+- Authentication flow
+- MFA handling
+- Data transformation accuracy
+- Error recovery
+- Cache effectiveness
+- Rate limit compliance
 
-### Integration Tests
-- OAuth flow with mock server
-- Data transformation pipeline
-- Rate limiting compliance
-- Cache behavior
+### Integration Testing
+- Full portfolio sync
+- Market data accuracy
+- Transaction history completeness
+- Multi-account scenarios
 
 ## Configuration
 
-### Service Configuration
-```typescript
-interface RobinhoodConfig {
-  // API settings
-  apiBaseUrl: string
-  apiVersion: string
-  userAgent: string
-  
-  // Auth settings
-  tokenRefreshBuffer: number  // Refresh X seconds before expiry
-  maxMFAAttempts: number
-  
-  // Performance
-  enableCaching: boolean
-  requestTimeout: number
-  maxRetries: number
-  
-  // Features
-  enableCrypto: boolean
-  enableOptions: boolean
-  enableDividends: boolean
-}
-```
+### Configurable Parameters
+- API endpoints
+- Request timeouts
+- Retry attempts
+- Cache durations
+- Rate limit thresholds
 
-## Usage Example
+### Environment Settings
+- Production API
+- Sandbox environment (if available)
+- Debug logging levels
+- Feature flags
 
-```typescript
-// Initialize service
-const robinhood = new RobinhoodService({
-  enableCaching: true,
-  requestTimeout: 30000
-})
+## Compliance Considerations
 
-// Authenticate
-await robinhood.authenticate({
-  username: 'user@example.com',
-  password: 'secure_password'
-})
+### Regulatory Requirements
+- Read-only access enforcement
+- Data privacy compliance
+- Audit trail maintenance
+- Terms of service adherence
 
-// Handle MFA if required
-if (robinhood.requiresMFA()) {
-  await robinhood.handleMFA('123456')
-}
+### Data Handling
+- No storage of credentials
+- Encrypted token storage
+- PII data minimization
+- Secure data transmission
 
-// Fetch portfolio
-const portfolio = await robinhood.getPortfolio()
-const positions = await robinhood.getPositions()
+## Performance Targets
 
-// Get real-time quotes
-const quotes = await robinhood.getQuotes(['AAPL', 'GOOGL', 'TSLA'])
+- Authentication: Under 3 seconds
+- Portfolio fetch: Under 2 seconds
+- Quote updates: Under 500ms
+- Transaction history: Under 2 seconds for 100 items
+- Cache hit ratio: Above 70%
 
-// Transform to standard format
-const standardPortfolio = transformToPortfolio(portfolio, positions)
-```
+## Limitations
+
+### API Restrictions
+- Read-only access
+- No trading capabilities
+- Limited historical data
+- Rate limiting constraints
+
+### Data Availability
+- Market hours restrictions
+- Delayed quotes for some assets
+- Limited options data
+- Corporate action delays
 
 ## Future Enhancements
 
-### Planned Features
-1. **Options Support**: Options positions and strategies
-2. **Advanced Orders**: Complex order types
-3. **Tax Documents**: 1099 form retrieval
-4. **Notifications**: Price alerts and order fills
-5. **Analytics**: Performance metrics and insights
-6. **Crypto Wallets**: Robinhood crypto wallet integration
+- WebSocket support for real-time data
+- Advanced options analytics
+- Tax document integration
+- Portfolio performance metrics
+- Automated alert system
+- Multi-account aggregation

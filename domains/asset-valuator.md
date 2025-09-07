@@ -2,183 +2,203 @@
 
 ## Domain Overview
 
-The Asset Valuator domain is responsible for cryptocurrency asset pricing and valuation across the CygnusWealth ecosystem. It provides real-time price data, currency conversions, and standardized valuation services.
+The Asset Valuator domain is responsible for cryptocurrency and traditional asset pricing and valuation across the CygnusWealth ecosystem. It provides real-time price data, currency conversions, and standardized valuation services for all asset types.
 
 ## Core Responsibilities
 
 ### Primary Functions
-1. **Real-time Price Fetching**: Retrieve current market prices from external APIs
+1. **Real-time Price Fetching**: Retrieve current market prices from multiple sources
 2. **Currency Conversion**: Convert between crypto and fiat currencies
-3. **Price Caching**: Intelligent caching with configurable TTL (default 60s)
+3. **Price Caching**: Intelligent caching with configurable TTL
 4. **Data Standardization**: Transform external price data to internal formats
 5. **Batch Operations**: Efficient bulk price fetching for multiple assets
+6. **Price Aggregation**: Combine prices from multiple sources for accuracy
 
 ### Domain Boundaries
-- **Owns**: Price data retrieval, caching logic, conversion calculations
-- **Does NOT Own**: Portfolio calculations, transaction history, wallet connections
+- **Owns**: Price data retrieval, caching logic, conversion calculations, price aggregation
+- **Does NOT Own**: Portfolio calculations, transaction history, wallet connections, asset balances
 
-## Key Components
+## Pricing Strategy
 
-### Core Classes
-```typescript
-AssetValuator {
-  - getPrice(symbol: string, currency?: string): Promise<Price>
-  - getBatchPrices(symbols: string[]): Promise<PriceMap>
-  - convertValue(amount: number, from: string, to: string): Promise<number>
-  - invalidateCache(): void
-}
+### Data Sources
+- **Primary Sources**: Major price aggregators (CoinGecko, CoinMarketCap)
+- **Secondary Sources**: Direct exchange APIs for specific assets
+- **Fallback Sources**: Cached data when APIs unavailable
+- **Custom Sources**: User-defined price feeds for unlisted assets
 
-DataModelConverter {
-  - toPriceModel(externalData: any): Price
-  - toMarketData(externalData: any): MarketData
-}
+### Price Resolution
+- Multiple source aggregation for accuracy
+- Outlier detection and filtering
+- Volume-weighted average pricing
+- Fallback to last known good price
 
-PriceProvider (interface) {
-  - fetchPrice(symbol: string): Promise<ExternalPrice>
-  - supportedAssets(): string[]
-}
-```
+## Supported Asset Types
 
-### Data Structures
-```typescript
-interface Price {
-  symbol: string
-  value: number
-  currency: string
-  timestamp: Date
-  source: string
-}
+### Cryptocurrency
+- Major cryptocurrencies (BTC, ETH, etc.)
+- ERC-20 tokens
+- SPL tokens (Solana)
+- NFT floor prices
+- DeFi LP tokens
 
-interface PriceMap {
-  [symbol: string]: Price
-}
+### Traditional Finance
+- Stocks and ETFs
+- Commodities
+- Forex rates
+- Index funds
+- Bonds and treasuries
 
-interface MarketData {
-  price: Price
-  volume24h: number
-  marketCap: number
-  priceChange24h: number
-}
-```
+## Caching Architecture
 
-## External Dependencies
+### Cache Layers
+- **Hot Cache**: 60-second TTL for active assets
+- **Warm Cache**: 5-minute TTL for less active assets
+- **Cold Cache**: 1-hour TTL for stable assets
+- **Historical Cache**: Persistent storage for historical data
 
-### Required Services
-- **CoinGecko API**: Primary price data source
-- **Backup Price Providers**: Fallback sources for resilience
+### Cache Invalidation
+- Time-based expiration
+- Event-driven updates
+- Manual refresh capability
+- Smart pre-fetching for anticipated requests
 
-### Internal Dependencies
-- **data-models**: Price and MarketData type definitions
+## Data Transformation
 
-## Integration Points
+### Standardization Rules
+- Unified price format across all sources
+- Consistent decimal precision
+- ISO currency codes
+- UTC timestamps
+- Source attribution
 
-### Inbound Contracts
-- **From cygnus-wealth-core**: 
-  - `getPrice(symbol, currency)` - Get single asset price
-  - `getBatchPrices(symbols)` - Get multiple asset prices
-  - `convertValue(amount, from, to)` - Convert between currencies
+### Currency Handling
+- Support for 150+ fiat currencies
+- Crypto-to-crypto conversions
+- Historical exchange rates
+- Real-time forex data
 
-### Outbound Contracts
-- **To external APIs**:
-  - HTTP REST calls to price providers
-  - Rate limiting and retry logic
+## Performance Optimization
 
-## Caching Strategy
+### Batching Strategy
+- Group API requests by source
+- Minimize external API calls
+- Parallel processing where possible
+- Request deduplication
 
-```typescript
-Cache Configuration {
-  - Default TTL: 60 seconds
-  - Max entries: 1000
-  - Eviction: LRU (Least Recently Used)
-  - Invalidation: Manual or TTL-based
-}
-```
+### Rate Limiting
+- Per-source rate limit tracking
+- Automatic throttling
+- Queue management
+- Burst handling
 
 ## Error Handling
 
-### Failure Scenarios
-1. **API Unavailable**: Fallback to backup providers
-2. **Rate Limiting**: Exponential backoff with retry
-3. **Invalid Symbol**: Return null with appropriate error
-4. **Network Timeout**: Circuit breaker pattern
+### Common Scenarios
+- API rate limits exceeded
+- Network timeouts
+- Invalid symbols
+- Stale data detection
+- Source unavailability
 
 ### Recovery Strategies
-- Cached data serves stale prices during outages
-- Multiple provider fallback chain
-- Graceful degradation with partial data
+1. **Source Failover**: Automatic switch to backup sources
+2. **Cache Fallback**: Use cached data when fresh data unavailable
+3. **Partial Results**: Return available prices in batch requests
+4. **Retry Logic**: Exponential backoff with jitter
+5. **Circuit Breaker**: Temporary source disabling
 
-## Performance Considerations
+## Integration Patterns
 
-### Optimization Strategies
-1. **Batch Requests**: Combine multiple price requests
-2. **Smart Caching**: Cache based on volatility patterns
-3. **Parallel Fetching**: Concurrent API calls with limits
-4. **Connection Pooling**: Reuse HTTP connections
+### Service Interface
+The domain exposes services for price data:
 
-### Metrics
-- Average response time: < 200ms (cached), < 2s (fresh)
-- Cache hit ratio target: > 80%
-- API call reduction: 90% via caching
+#### Price Service
+- Single asset price fetching
+- Batch price retrieval
+- Historical price data
+- Price change calculations
 
-## Security Considerations
+#### Conversion Service
+- Currency conversion
+- Exchange rate fetching
+- Multi-hop conversions
+- Historical rates
 
-1. **API Key Management**: Secure storage, rotation support
-2. **Rate Limiting**: Respect provider limits
-3. **Data Validation**: Sanitize external data
-4. **No Sensitive Data**: Prices are public information
+#### Market Data Service
+- Market capitalization
+- Trading volume
+- Price movements
+- Market trends
 
-## Future Enhancements
+## Quality Assurance
 
-### Planned Features
-- WebSocket support for real-time prices
-- Historical price data storage
-- Technical indicators calculation
-- Custom price aggregation strategies
-- More price provider integrations
+### Data Validation
+- Price sanity checks
+- Outlier detection
+- Source reliability scoring
+- Consistency verification
 
-### Scalability Considerations
-- Distributed caching for multi-instance deployments
-- Price data streaming architecture
-- Advanced prediction models for cache warming
-
-## Testing Strategy
-
-### Unit Tests
-- Price fetching with mocked providers
-- Conversion calculations accuracy
-- Cache behavior validation
-
-### Integration Tests
-- Real API interaction tests
-- Fallback provider chain
-- Rate limiting compliance
+### Monitoring
+- API health checks
+- Cache hit ratios
+- Response time tracking
+- Error rate monitoring
 
 ## Configuration
 
-```typescript
-interface AssetValuatorConfig {
-  cacheTimeout: number        // Default: 60000ms
-  providers: ProviderConfig[]  // Ordered by priority
-  retryAttempts: number       // Default: 3
-  requestTimeout: number      // Default: 5000ms
-}
-```
+### Configurable Parameters
+- Cache TTL values
+- API endpoints
+- Rate limit thresholds
+- Retry attempts
+- Timeout values
+- Price precision
 
-## Usage Example
+### API Configuration
+- API key management
+- Endpoint selection
+- Request priorities
+- Fallback ordering
 
-```typescript
-// Initialize valuator
-const valuator = new AssetValuator({
-  cacheTimeout: 60000,
-  providers: [coinGeckoProvider, backupProvider]
-});
+## Testing Strategy
 
-// Get single price
-const btcPrice = await valuator.getPrice('BTC', 'USD');
+### Test Coverage Areas
+- Price fetching accuracy
+- Currency conversion correctness
+- Cache behavior
+- Error handling
+- Rate limit compliance
+- Batch operation efficiency
 
-// Get multiple prices
-const prices = await valuator.getBatchPrices(['BTC', 'ETH', 'SOL']);
+### Testing Scenarios
+- Multi-source price aggregation
+- API failure handling
+- Cache expiration
+- High-volume batch requests
+- Concurrent request handling
 
-// Convert value
-const usdValue = await valuator.convertValue(1.5, 'BTC', 'USD');
-```
+## Performance Targets
+
+- Single price fetch: Under 200ms (cached), under 1s (fresh)
+- Batch fetch (100 assets): Under 2 seconds
+- Currency conversion: Under 100ms
+- Cache hit ratio: Above 80%
+- API success rate: Above 99%
+
+## Security Considerations
+
+- API key encryption
+- Request authentication
+- Data integrity verification
+- Rate limit protection
+- DDoS mitigation
+
+## Future Enhancements
+
+- Machine learning for price prediction
+- Decentralized price oracles
+- Custom price feed integration
+- Advanced market analytics
+- Real-time WebSocket feeds
+- Historical data archival
+- Cross-chain price discovery
