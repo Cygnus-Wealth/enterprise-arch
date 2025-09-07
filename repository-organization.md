@@ -26,7 +26,7 @@ Examples:
 - `portfolio-aggregation`
 - `evm-integration`
 - `data-models`
-- `cygnus-wealth-core`
+- `cygnus-wealth-app`
 
 ### Repository List by Domain
 
@@ -38,12 +38,13 @@ Examples:
 - `asset-valuator` - Pricing and valuation services
 
 #### Integration Domain
+- `wallet-integration-system` - Wallet connection management
 - `evm-integration` - Ethereum/EVM blockchain integration
 - `sol-integration` - Solana blockchain integration
 - `robinhood-integration` - Traditional finance integration
 
 #### Experience Domain
-- `cygnus-wealth-core` - Main React application UI
+- `cygnus-wealth-app` - Main React application UI
 
 ## Topic Tags Strategy
 
@@ -98,7 +99,7 @@ portfolio-aggregation:
   - typescript
   - defi
 
-cygnus-wealth-core:
+cygnus-wealth-app:
   - domain:experience
   - context:ui
   - type:application
@@ -227,7 +228,7 @@ Each repository includes a CODEOWNERS file:
 - **data-models**: Semantic versioning with strict compatibility
 - **Integration domains**: Independent versioning
 - **portfolio-aggregation**: Depends on integration interfaces, not implementations
-- **cygnus-wealth-core**: Depends on aggregation service interface
+- **cygnus-wealth-app**: Depends on aggregation service interface
 
 ### Dependency Rules
 
@@ -243,7 +244,7 @@ Each repository includes a CODEOWNERS file:
    - Depends on data-models
    - Can depend on integration interfaces
 
-4. **Application Layer** (cygnus-wealth-core)
+4. **Application Layer** (cygnus-wealth-app)
    - Can depend on service layer
    - Cannot directly depend on integrations
 
@@ -303,6 +304,7 @@ Decentralized portfolio aggregation platform.
 - [asset-valuator](https://github.com/cygnus-wealth/asset-valuator)
 
 ### 🔌 Integration Domain
+- [wallet-integration-system](https://github.com/cygnus-wealth/wallet-integration-system)
 - [evm-integration](https://github.com/cygnus-wealth/evm-integration)
 - [sol-integration](https://github.com/cygnus-wealth/sol-integration)
 - [robinhood-integration](https://github.com/cygnus-wealth/robinhood-integration)
@@ -311,7 +313,7 @@ Decentralized portfolio aggregation platform.
 - [data-models](https://github.com/cygnus-wealth/data-models)
 
 ### 💻 Experience Domain
-- [cygnus-wealth-core](https://github.com/cygnus-wealth/cygnus-wealth-core)
+- [cygnus-wealth-app](https://github.com/cygnus-wealth/cygnus-wealth-app)
 ```
 
 ### Topic-Based Discovery

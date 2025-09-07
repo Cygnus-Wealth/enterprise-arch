@@ -16,465 +16,298 @@ This document defines the contracts and communication patterns between domains i
 
 ```
 ┌─────────────────────────────────────────────────────┐
-│                 cygnus-wealth-core                   │
-│                   (Orchestrator)                     │
-└──────────┬──────────────────────────┬───────────────┘
-           │                          │
-           ▼                          ▼
-┌──────────────────────┐    ┌────────────────────────┐
-│ wallet-integration   │    │    asset-valuator      │
-│      system          │    │                        │
-└──────────┬───────────┘    └───────────┬────────────┘
-           │                             │
-           ▼                             ▼
-┌──────────────────────────────────────────────────────┐
-│                    data-models                        │
-│                 (Shared Contracts)                    │
-└──────────────────────────────────────────────────────┘
-           ▲              ▲              ▲
-           │              │              │
-┌──────────┴─────┐ ┌─────┴──────┐ ┌────┴────────────┐
-│ evm-integration│ │sol-integration│ │robinhood-      │
-│                │ │              │ │integration      │
-└────────────────┘ └──────────────┘ └─────────────────┘
+│                cygnus-wealth-app                     │
+│               (Experience Domain)                    │
+└────────┬──────────────────┬──────────────────────────┘
+         │                  │
+         │                  ▼
+         │    ┌──────────────────────────┐
+         │    │ wallet-integration-system│
+         │    │   (Integration Domain)    │
+         │    └──────────┬────────────────┘
+         │               │ provides addresses
+         ▼               ▼
+┌─────────────────────────────────────────────────────┐
+│            portfolio-aggregation                     │
+│              (Portfolio Domain)                      │
+└──────┬─────────────────┬──────────────────┬─────────┘
+       │                 │                  │
+       ▼                 ▼                  ▼
+┌──────────────┐  ┌──────────────┐  ┌─────────────────────────┐
+│asset-valuator│  │evm-integration│  │sol-integration/robinhood│
+│(Portfolio)   │  │(Integration)  │  │     (Integration)       │
+└──────┬───────┘  └──────┬────────┘  └──────────┬──────────────┘
+       │                 │                       │
+       ▼                 ▼                       ▼
+┌──────────────────────────────────────────────────────────────┐
+│                        data-models                           │
+│                     (Contract Domain)                        │
+└──────────────────────────────────────────────────────────────┘
 ```
 
-## Core Domain Contracts
+## Primary Contracts
 
-### Contract: Core → Wallet Integration
+### Contract: App → Wallet Integration
 
-**Purpose**: Manage wallet connections across all chains
+**Purpose**: Manage wallet connections from the UI
 
 **Interface**:
-```typescript
-interface WalletIntegrationContract {
+```
+WalletConnectionContract {
   // Commands
-  connect(walletType: WalletType, chain: Chain): Promise<WalletConnection>
-  disconnect(walletId: string): Promise<void>
-  switchChain(walletId: string, chainId: number): Promise<void>
+  connectWallet(type, options): Connection
+  disconnectWallet(id): void
+  switchChain(walletId, chainId): void
   
   // Queries
-  getConnectedWallets(): WalletConnection[]
-  getWalletsByChain(chain: Chain): WalletConnection[]
+  getAvailableWallets(): WalletList
+  getConnectedWallets(): ConnectionList
   
   // Events
-  onWalletConnected: EventEmitter<WalletConnection>
-  onWalletDisconnected: EventEmitter<string>
-  onChainChanged: EventEmitter<{walletId: string, chainId: number}>
+  onWalletConnected: Event
+  onWalletDisconnected: Event
+  onChainChanged: Event
 }
 ```
 
 **Data Flow**:
+1. User initiates wallet connection in app
+2. App calls wallet-integration-system to connect
+3. Wallet-integration handles provider interaction
+4. Returns connection status to app
+5. Addresses available for portfolio aggregation
+
+### Contract: Portfolio Aggregation → Wallet Integration
+
+**Purpose**: Get connected wallet addresses for data fetching
+
+**Interface**:
 ```
-Core → Request Connection → Wallet System
-Core ← Return Connection ← Wallet System
-Core ← Emit Events ← Wallet System
+WalletIntegrationContract {
+  // Queries
+  getConnectedAddresses(): AddressList
+  getAddressesByChain(chain): AddressList
+  getWalletMetadata(address): WalletInfo
+  
+  // Events
+  onAddressConnected: Event
+  onAddressDisconnected: Event
+}
 ```
 
-### Contract: Core → Asset Valuator
+**Data Flow**:
+1. Portfolio aggregation requests connected addresses
+2. Wallet integration returns list of addresses with chain info
+3. Portfolio aggregation uses addresses to coordinate blockchain queries
+
+### Contract: Portfolio Aggregation → EVM/Sol Integration
+
+**Purpose**: Fetch blockchain data for given addresses
+
+**Interface**:
+```
+BlockchainIntegrationContract {
+  // Queries
+  getBalances(addresses): BalanceList
+  getTransactions(addresses, options): TransactionList
+  getTokens(addresses): TokenList
+  getNFTs(addresses): NFTList
+  
+  // Real-time
+  subscribeToUpdates(addresses): Subscription
+}
+```
+
+**Data Flow**:
+1. Portfolio aggregation provides addresses from wallet integration
+2. Blockchain integrations fetch on-chain data
+3. Data transformed to unified models
+4. Returned to portfolio aggregation for combining
+
+### Contract: Portfolio Aggregation → Asset Valuator
 
 **Purpose**: Get pricing and valuation data
 
 **Interface**:
-```typescript
-interface AssetValuatorContract {
+```
+AssetValuatorContract {
   // Queries
-  getPrice(symbol: string, currency?: string): Promise<Price>
-  getBatchPrices(symbols: string[]): Promise<Map<string, Price>>
-  convertValue(amount: number, from: string, to: string): Promise<number>
-  getMarketData(symbol: string): Promise<MarketData>
+  getPrice(symbol, currency): Price
+  getBatchPrices(symbols): PriceMap
+  convertValue(amount, from, to): ConvertedValue
+  getMarketData(symbol): MarketData
   
   // Cache Management
-  invalidateCache(symbols?: string[]): void
+  invalidateCache(symbols): void
   getCacheStatus(): CacheStatus
 }
 ```
 
 **Data Flow**:
-```
-Core → Request Prices → Asset Valuator
-Asset Valuator → Fetch from API → External Service
-Asset Valuator → Cache Result → Internal Cache
-Core ← Return Prices ← Asset Valuator
-```
+1. Portfolio aggregation sends assets for pricing
+2. Asset valuator fetches/caches prices
+3. Returns enriched valuations
+4. Portfolio aggregation combines with quantities
 
-### Contract: Core → EVM Integration
+### Contract: App → Portfolio Aggregation
 
-**Purpose**: Fetch EVM blockchain data
+**Purpose**: Orchestrate complete portfolio fetching
 
 **Interface**:
-```typescript
-interface EvmIntegrationContract {
+```
+PortfolioAggregationContract {
+  // Commands
+  refreshPortfolio(): Portfolio
+  addIntegration(type, config): void
+  removeIntegration(id): void
+  
   // Queries
-  getBalance(address: string, chainId?: number): Promise<Balance>
-  getTokenBalances(address: string, tokens: string[]): Promise<TokenBalance[]>
-  getTransactions(address: string, options?: TxOptions): Promise<Transaction[]>
+  getPortfolio(): Portfolio
+  getAssets(): AssetList
+  getTransactions(filter): TransactionList
   
-  // Real-time
-  subscribeToBalance(address: string, callback: BalanceCallback): Unsubscribe
-  subscribeToTransactions(address: string, callback: TxCallback): Unsubscribe
-  
-  // Chain Management
-  setActiveChain(chainId: number): void
-  getSupportedChains(): ChainConfig[]
+  // Events
+  onPortfolioUpdated: Event
+  onSyncComplete: Event
+  onError: Event
 }
 ```
 
 **Data Flow**:
+1. App requests portfolio refresh
+2. Portfolio aggregation orchestrates all integrations
+3. Combines and deduplicates data
+4. Returns unified portfolio to app
+
+## Integration Patterns
+
+### Command Pattern
+All state-changing operations use commands:
+- Connect wallet
+- Refresh portfolio
+- Add integration
+- Clear cache
+
+### Query Pattern
+All data fetching uses queries:
+- Get balances
+- Get prices
+- Get transactions
+- Get portfolio
+
+### Event Pattern
+Async notifications use events:
+- Wallet connected/disconnected
+- Portfolio updated
+- Sync completed
+- Errors occurred
+
+## Error Handling Contracts
+
+### Error Types
+Each domain defines its own error types:
 ```
-Core → Get Wallet Address → Wallet System
-Core → Request Balance(address) → EVM Integration
-EVM → Query Blockchain → RPC Provider
-EVM → Transform Data → Data Models Format
-Core ← Return Balance ← EVM Integration
-```
-
-### Contract: Core → Solana Integration
-
-**Purpose**: Fetch Solana blockchain data
-
-**Interface**:
-```typescript
-interface SolanaIntegrationContract {
-  // Queries
-  getPortfolioSnapshot(address: string): Promise<PortfolioSnapshot>
-  getTokenBalances(address: string): Promise<TokenBalance[]>
-  getNFTCollection(address: string): Promise<NFT[]>
-  getTransactionHistory(address: string, limit?: number): Promise<Transaction[]>
-  
-  // Real-time
-  subscribeToBalance(address: string): Observable<BalanceUpdate>
-  subscribeToTransactions(address: string): Observable<Transaction>
-  
-  // Performance
-  getCacheMetrics(): CacheMetrics
-  getCircuitBreakerStatus(): CircuitBreakerStatus
-}
-```
-
-**Data Flow**:
-```
-Core → Get Wallet PublicKey → Wallet System
-Core → Request Portfolio → Solana Integration
-Solana → Check Cache → LRU Cache
-Solana → Fetch Data → RPC Client Pool
-Solana → Apply Domain Logic → Domain Aggregates
-Core ← Return Portfolio ← Solana Integration
-```
-
-### Contract: Core → Robinhood Integration
-
-**Purpose**: Fetch traditional finance data
-
-**Interface**:
-```typescript
-interface RobinhoodIntegrationContract {
-  // Authentication
-  authenticate(credentials: Credentials): Promise<AuthResult>
-  handleMFA(code: string): Promise<AuthResult>
-  refreshSession(): Promise<void>
-  logout(): Promise<void>
-  
-  // Queries
-  getPortfolio(): Promise<Portfolio>
-  getPositions(): Promise<Position[]>
-  getQuotes(symbols: string[]): Promise<Quote[]>
-  getOrders(options?: OrderOptions): Promise<Order[]>
-  
-  // State
-  isAuthenticated(): boolean
-  getAccountInfo(): Promise<AccountInfo>
-}
-```
-
-**Data Flow**:
-```
-Core → Initiate Auth → Robinhood Integration
-Robinhood → OAuth Flow → Robinhood API
-Core ← Auth Result ← Robinhood Integration
-Core → Request Portfolio → Robinhood Integration
-Robinhood → Fetch Data → Robinhood API
-Robinhood → Transform → Data Models Format
-Core ← Portfolio Data ← Robinhood Integration
-```
-
-## Integration Domain Contracts
-
-### Contract: EVM/Solana → Data Models
-
-**Purpose**: Use standardized data structures
-
-**Interface**:
-```typescript
-// All domains import and use these types
-import {
-  Asset,
-  Balance,
-  Transaction,
-  Portfolio,
-  Chain,
-  AssetType,
-  IntegrationSource
-} from '@cygnus-wealth/data-models'
-```
-
-**Usage Pattern**:
-```typescript
-// In EVM Integration
-function transformToAsset(tokenBalance: RawTokenData): Asset {
-  return {
-    id: generateId(tokenBalance),
-    symbol: tokenBalance.symbol,
-    type: AssetType.TOKEN,
-    chain: Chain.ETHEREUM,
-    balance: transformBalance(tokenBalance),
-    // ... map to data-models structure
-  }
-}
-```
-
-### Contract: EVM/Solana → Wallet System
-
-**Purpose**: Get connected wallet addresses
-
-**Interface**:
-```typescript
-interface WalletQueryContract {
-  // Queries only - no modifications
-  getWalletsByChain(chain: Chain): WalletConnection[]
-  getActiveAddress(chain: Chain): string | null
-  isWalletConnected(chain: Chain): boolean
-}
-```
-
-**Usage Pattern**:
-```typescript
-// In EVM Integration
-async function fetchUserBalance(): Promise<Balance> {
-  const address = walletSystem.getActiveAddress(Chain.ETHEREUM)
-  if (!address) throw new NoWalletError()
-  
-  return this.getBalance(address)
-}
-```
-
-### Contract: All Domains → Asset Valuator
-
-**Purpose**: Enrich data with pricing information
-
-**Interface**:
-```typescript
-interface PricingContract {
-  getPrice(symbol: string): Promise<Price>
-  getBatchPrices(symbols: string[]): Promise<Map<string, Price>>
-}
-```
-
-**Usage Pattern**:
-```typescript
-// In any integration domain
-async function enrichWithPrices(assets: Asset[]): Promise<Asset[]> {
-  const symbols = assets.map(a => a.symbol)
-  const prices = await assetValuator.getBatchPrices(symbols)
-  
-  return assets.map(asset => ({
-    ...asset,
-    value: {
-      amount: asset.balance.amount * prices.get(asset.symbol).value,
-      currency: 'USD',
-      timestamp: new Date()
-    }
-  }))
-}
-```
-
-## Event Contracts
-
-### Event Bus Contract
-
-**Purpose**: Loosely coupled event communication
-
-**Events**:
-```typescript
-interface DomainEvents {
-  // Wallet Events
-  'wallet:connected': { wallet: WalletConnection }
-  'wallet:disconnected': { walletId: string }
-  'wallet:accountChanged': { walletId: string, accounts: string[] }
-  'wallet:chainChanged': { walletId: string, chainId: number }
-  
-  // Portfolio Events
-  'portfolio:updated': { portfolioId: string, changes: Change[] }
-  'portfolio:syncing': { portfolioId: string, source: IntegrationSource }
-  'portfolio:syncComplete': { portfolioId: string, success: boolean }
-  
-  // Price Events
-  'price:updated': { symbol: string, price: Price }
-  'price:batchUpdated': { prices: Map<string, Price> }
-  
-  // Integration Events
-  'integration:connected': { type: IntegrationType, id: string }
-  'integration:disconnected': { type: IntegrationType, id: string }
-  'integration:error': { type: IntegrationType, error: Error }
-}
-```
-
-**Usage**:
-```typescript
-// Publishing events
-eventBus.emit('wallet:connected', { wallet: newConnection })
-
-// Subscribing to events
-eventBus.on('wallet:connected', ({ wallet }) => {
-  // React to wallet connection
-  this.syncPortfolio(wallet.chain)
-})
-```
-
-## Error Contracts
-
-### Error Transformation
-
-**Purpose**: Convert domain errors to common format
-
-**Pattern**:
-```typescript
-interface ErrorContract {
-  code: string
+DomainError {
+  code: ErrorCode
   message: string
-  domain: string
+  domain: DomainName
   originalError?: any
-  recoverable: boolean
-  userAction?: string
-}
-
-// Each domain transforms its errors
-function transformError(domainError: any): ErrorContract {
-  return {
-    code: mapErrorCode(domainError),
-    message: getUserMessage(domainError),
-    domain: 'evm-integration',
-    originalError: domainError,
-    recoverable: isRecoverable(domainError),
-    userAction: getSuggestedAction(domainError)
-  }
+  timestamp: Date
 }
 ```
+
+### Error Propagation
+1. Errors caught at domain boundary
+2. Transformed to domain-specific type
+3. Logged with context
+4. Propagated to caller
+5. UI shows user-friendly message
+
+## Data Transformation Contracts
+
+### Integration → Data Models
+All integrations must transform to unified models:
+- External API response → Unified Asset
+- Blockchain data → Unified Transaction
+- Price data → Unified Price
+
+### Validation Rules
+Data must be validated at boundaries:
+- Required fields present
+- Correct data types
+- Valid ranges
+- Consistent units
 
 ## Performance Contracts
 
-### SLA Definitions
-
-**Response Time Contracts**:
-```typescript
-interface PerformanceSLA {
-  // Maximum response times (ms)
-  walletConnection: 5000      // 5 seconds
-  balanceFetch: 2000          // 2 seconds (fresh)
-  balanceCached: 100          // 100ms (cached)
-  priceFetch: 1000           // 1 second
-  portfolioAggregate: 3000   // 3 seconds
-  transactionQuery: 2000     // 2 seconds
-}
-```
+### Response Time SLAs
+- Wallet connection: < 3 seconds
+- Balance fetch: < 2 seconds per chain
+- Price fetch: < 500ms cached, < 2s fresh
+- Full portfolio: < 5 seconds
 
 ### Caching Contracts
+Each domain specifies cache behavior:
+- TTL for different data types
+- Invalidation triggers
+- Cache size limits
+- Fallback strategies
 
-**Cache Coordination**:
-```typescript
-interface CacheContract {
-  // Cache keys follow pattern: domain:type:identifier
-  getCacheKey(domain: string, type: string, id: string): string
-  
-  // Coordinated cache invalidation
-  invalidate(pattern: string): void
-  
-  // Cache TTL agreements
-  getTTL(dataType: string): number
-}
+## Security Contracts
 
-const CACHE_TTL = {
-  'price': 60_000,           // 1 minute
-  'balance': 300_000,        // 5 minutes
-  'transaction': 600_000,    // 10 minutes
-  'portfolio': 300_000,      // 5 minutes
-  'nft': 3600_000           // 1 hour
-}
-```
+### Read-Only Guarantee
+Integration domains guarantee:
+- Never request private keys
+- Never sign transactions
+- Never modify external state
+- Only read public data
+
+### Data Privacy
+- No external telemetry
+- Local-only storage
+- Encrypted sensitive data
+- No third-party sharing
+
+## Versioning Contracts
+
+### Semantic Versioning
+All contracts follow semver:
+- Major: Breaking changes
+- Minor: New features
+- Patch: Bug fixes
+
+### Backward Compatibility
+- Deprecation warnings
+- Migration guides
+- Compatibility layers
+- Graceful degradation
 
 ## Testing Contracts
 
-### Integration Test Contracts
+### Contract Tests
+Each domain provides:
+- Contract test suites
+- Mock implementations
+- Test fixtures
+- Integration tests
 
-**Mock Providers**:
-```typescript
-interface MockProviderContract {
-  // Each domain provides mock implementations
-  createMockProvider(): any
-  createMockData(): any
-  simulateError(type: string): void
-  reset(): void
-}
-```
+### Test Coverage Requirements
+- Unit tests: 80%+
+- Integration tests: Critical paths
+- Contract tests: All interfaces
+- E2E tests: User journeys
 
-**Test Data Contracts**:
-```typescript
-interface TestDataContract {
-  // Shared test data following data-models
-  getMockAsset(): Asset
-  getMockPortfolio(): Portfolio
-  getMockTransaction(): Transaction
-  getMockWallet(): WalletConnection
-}
-```
+## Future Contract Extensions
 
-## Version Compatibility
+### Planned Additions
+- WebSocket subscriptions
+- Batch operations
+- Streaming responses
+- GraphQL interfaces
 
-### Semantic Versioning Contract
-
-**Rules**:
-1. **Major**: Breaking changes to contracts
-2. **Minor**: New optional contract methods
-3. **Patch**: Implementation changes only
-
-**Compatibility Matrix**:
-```typescript
-const COMPATIBILITY = {
-  'data-models': {
-    '1.x': ['core@1.x', 'evm@1.x', 'sol@1.x'],
-    '2.x': ['core@2.x', 'evm@2.x', 'sol@2.x']
-  },
-  'core': {
-    '1.x': ['wallet@1.x', 'valuator@1.x'],
-    '2.x': ['wallet@2.x', 'valuator@2.x']
-  }
-}
-```
-
-## Contract Evolution
-
-### Adding New Contracts
-
-**Process**:
-1. Define interface in data-models
-2. Implement in provider domain
-3. Add optional support in consumer
-4. Make required in next major version
-
-### Deprecating Contracts
-
-**Process**:
-1. Mark as deprecated with warning
-2. Provide migration guide
-3. Support both old and new for one major version
-4. Remove in next major version
-
-```typescript
-interface DeprecationNotice {
-  method: string
-  deprecatedIn: string
-  removeIn: string
-  alternative: string
-  migrationGuide: string
-}
-```
+### Extension Points
+Contracts designed for extension:
+- New integration types
+- Additional data fields
+- New event types
+- Performance optimizations

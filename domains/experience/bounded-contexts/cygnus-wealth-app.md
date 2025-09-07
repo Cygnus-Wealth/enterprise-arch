@@ -1,8 +1,8 @@
-# CygnusWealth Core Domain
+# CygnusWealth App
 
-## Domain Overview
+## Bounded Context Overview
 
-The CygnusWealth Core domain provides the user interface and user experience layer for the portfolio management system. It focuses on presentation, user interaction, and managing user preferences while delegating data orchestration to the portfolio-aggregation domain.
+The CygnusWealth App is the main web application that provides the user interface and user experience for the portfolio management system. It focuses on presentation, user interaction, and managing user preferences while delegating data orchestration to the portfolio-aggregation domain.
 
 ## Core Responsibilities
 

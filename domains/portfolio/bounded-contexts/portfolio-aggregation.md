@@ -38,7 +38,7 @@ The Portfolio Aggregation domain is responsible for orchestrating data collectio
 - **asset-valuator**: For pricing and valuation
 
 ### Depended On By
-- **cygnus-wealth-core**: Uses aggregation services for portfolio data
+- **cygnus-wealth-app**: Uses aggregation services for portfolio data
 
 ## Key Concepts
 

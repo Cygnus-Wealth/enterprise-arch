@@ -14,19 +14,25 @@ CygnusWealth is a privacy-first, decentralized portfolio aggregation system buil
 
 ## Domain Structure
 
-Each bounded context lives in its own repository under the `cygnus-wealth` GitHub organization:
+CygnusWealth is organized into four strategic domains, each containing one or more bounded contexts:
 
 ```
-cygnus-wealth/                        # GitHub Organization
-├── data-models/                      # Shared contracts and unified data structures
-├── portfolio-aggregation/            # Portfolio orchestration and aggregation logic
-├── cygnus-wealth-core/              # User interface and user experience
-├── asset-valuator/                  # Pricing and valuation services
-├── evm-integration/                 # EVM blockchain integration
-├── sol-integration/                 # Solana blockchain integration
-└── robinhood-integration/           # Traditional finance integration
+Domains/
+├── Contract/                         # Shared contracts and data models
+│   └── data-models                  # Unified data structures
+├── Portfolio/                        # Core business domain
+│   ├── portfolio-aggregation        # Orchestration and aggregation
+│   └── asset-valuator              # Pricing and valuation
+├── Integration/                      # External data acquisition
+│   ├── wallet-integration-system   # Wallet connections
+│   ├── evm-integration             # Ethereum/EVM blockchains
+│   ├── sol-integration             # Solana blockchain
+│   └── robinhood-integration       # Traditional finance
+└── Experience/                       # User interfaces
+    └── cygnus-wealth-app           # Main web application
 ```
 
+Each bounded context lives in its own repository under the `cygnus-wealth` GitHub organization.
 See [Repository Organization Strategy](./repository-organization.md) for detailed GitHub structure.
 
 ## Architecture Layers
@@ -37,30 +43,48 @@ See [Repository Organization Strategy](./repository-organization.md) for detaile
 - Ensures type safety and consistency
 - Provides the canonical representation for all assets
 
-### 2. Integration Layer
+### 2. Integration Layer (Integration Domain)
+- **wallet-integration-system**: Manages wallet provider connections
 - **evm-integration**: EVM blockchain data retrieval and wallet tracking
 - **sol-integration**: Solana blockchain data retrieval and wallet tracking
 - **robinhood-integration**: Traditional finance data retrieval
 - Each integration handles its own connection management and data fetching
 
-### 3. Service Layer
+### 3. Service Layer (Portfolio Domain)
 - **portfolio-aggregation**: Orchestrates data collection from all integrations
 - **asset-valuator**: Provides pricing and valuation services
 
-### 4. Application Layer
-- **cygnus-wealth-core**: User interface, interaction, and configuration
+### 4. Application Layer (Experience Domain)
+- **cygnus-wealth-app**: User interface, interaction, and configuration
 - Manages user preferences including which addresses to track
 - Handles visualization and user experience
 
-## Domain Documents
+## Domain Documentation
 
-- [Data Models Domain](./domains/data-models.md) - Unified data structures
-- [Portfolio Aggregation Domain](./domains/portfolio-aggregation.md) - Orchestration logic
-- [Core Application Domain](./domains/cygnus-wealth-core.md) - User interface
-- [Asset Valuator Domain](./domains/asset-valuator.md) - Pricing services
-- [EVM Integration Domain](./domains/evm-integration.md) - Ethereum/EVM support
-- [Solana Integration Domain](./domains/sol-integration.md) - Solana support
-- [Robinhood Integration Domain](./domains/robinhood-integration.md) - TradFi support
+### Strategic Domains
+- [Contract Domain](./domains/contract/README.md) - Shared language and contracts
+- [Portfolio Domain](./domains/portfolio/README.md) - Core business logic
+- [Integration Domain](./domains/integration/README.md) - External data acquisition
+- [Experience Domain](./domains/experience/README.md) - User interfaces
+
+### Bounded Contexts
+#### Contract Domain
+- [Data Models](./domains/contract/bounded-contexts/data-models.md) - Unified data structures
+
+#### Portfolio Domain
+- [Portfolio Aggregation](./domains/portfolio/bounded-contexts/portfolio-aggregation.md) - Orchestration logic
+- [Asset Valuator](./domains/portfolio/bounded-contexts/asset-valuator.md) - Pricing services
+
+#### Integration Domain
+- [Wallet Integration System](./domains/integration/bounded-contexts/wallet-integration-system.md) - Wallet connections
+- [EVM Integration](./domains/integration/bounded-contexts/evm-integration.md) - Ethereum/EVM support
+- [Solana Integration](./domains/integration/bounded-contexts/sol-integration.md) - Solana support
+- [Robinhood Integration](./domains/integration/bounded-contexts/robinhood-integration.md) - TradFi support
+
+#### Experience Domain
+- [CygnusWealth App](./domains/experience/bounded-contexts/cygnus-wealth-app.md) - Web application
+
+### Architecture Documents
 - [Domain Contracts](./contracts.md) - Inter-domain communication contracts
 
 ## Repository Organization
@@ -70,20 +94,22 @@ See [Repository Organization Strategy](./repository-organization.md) for detaile
 ## Communication Patterns
 
 ### Event Flow
-1. User interactions trigger events in **cygnus-wealth-core**
-2. Core delegates to **portfolio-aggregation** for data orchestration
-3. Portfolio aggregation coordinates calls to integration domains
-4. Integration domains fetch data from external sources
-5. Data is transformed to unified **data-models** format
-6. **asset-valuator** enriches data with pricing information
-7. Portfolio aggregation combines and deduplicates data
-8. Core receives aggregated portfolio and presents to user
+1. User interactions trigger events in **cygnus-wealth-app**
+2. App delegates to **portfolio-aggregation** for data orchestration
+3. **wallet-integration-system** provides connected addresses
+4. Portfolio aggregation coordinates calls to blockchain integrations
+5. Integration domains fetch data from external sources
+6. Data is transformed to unified **data-models** format
+7. **asset-valuator** enriches data with pricing information
+8. Portfolio aggregation combines and deduplicates data
+9. App receives aggregated portfolio and presents to user
 
 ### Data Flow
 ```
-External Sources → Integration Domains → Portfolio Aggregation → Core → User
-                            ↓                     ↓
-                      Data Models          Asset Valuator
+External Sources → Integration Domain → Portfolio Domain → Experience Domain → User
+                            ↓                    ↓
+                    Contract Domain      Asset Valuator
+                    (Data Models)
 ```
 
 ## Technology Stack
