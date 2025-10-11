@@ -52,22 +52,24 @@ Examples:
 
 Every repository MUST include these topic tags:
 
-1. **Domain Tag**: `domain:{domain-name}`
-   - `domain:portfolio`
-   - `domain:integration`
-   - `domain:contract`
-   - `domain:experience`
+**Note**: GitHub topics use hyphens, not colons (e.g., `domain-portfolio` not `domain:portfolio`)
 
-2. **Context Tag**: `context:{context-name}`
-   - `context:aggregation`
-   - `context:evm`
-   - `context:solana`
-   - `context:ui`
+1. **Domain Tag**: `domain-{domain-name}`
+   - `domain-portfolio`
+   - `domain-integration`
+   - `domain-contract`
+   - `domain-experience`
 
-3. **Type Tag**: `type:{repository-type}`
-   - `type:library`
-   - `type:service`
-   - `type:application`
+2. **Context Tag**: `context-{context-name}`
+   - `context-aggregation`
+   - `context-evm`
+   - `context-solana`
+   - `context-ui`
+
+3. **Type Tag**: `type-{repository-type}`
+   - `type-library`
+   - `type-service`
+   - `type-application`
 
 ### Optional Topics
 
@@ -84,25 +86,25 @@ Additional descriptive topics for discoverability:
 
 ```
 evm-integration:
-  - domain:integration
-  - context:evm
-  - type:library
+  - domain-integration
+  - context-evm
+  - type-library
   - blockchain
   - web3
   - ethereum
   - typescript
 
 portfolio-aggregation:
-  - domain:portfolio
-  - context:aggregation
-  - type:service
+  - domain-portfolio
+  - context-aggregation
+  - type-service
   - typescript
   - defi
 
 cygnus-wealth-app:
-  - domain:experience
-  - context:ui
-  - type:application
+  - domain-experience
+  - context-ui
+  - type-application
   - react
   - typescript
   - web3
@@ -175,9 +177,9 @@ Consistent package configuration:
   "version": "1.0.0",
   "description": "{Bounded context description}",
   "keywords": [
-    "domain:{domain}",
-    "context:{context}",
-    "type:{type}",
+    "domain-{domain}",
+    "context-{context}",
+    "type-{type}",
     "cygnus-wealth"
   ],
   "repository": {
@@ -320,8 +322,8 @@ Decentralized portfolio aggregation platform.
 
 Users can discover repositories by:
 
-1. **Domain**: `org:cygnus-wealth topic:domain:integration`
-2. **Type**: `org:cygnus-wealth topic:type:library`
+1. **Domain**: `org:cygnus-wealth topic:domain-integration`
+2. **Type**: `org:cygnus-wealth topic:type-library`
 3. **Technology**: `org:cygnus-wealth topic:blockchain`
 
 ## Migration Strategy
@@ -378,5 +380,5 @@ Users can discover repositories by:
 
 - Organization: `https://github.com/cygnus-wealth`
 - Repository: `https://github.com/cygnus-wealth/evm-integration`
-- Topics Search: `https://github.com/search?q=org:cygnus-wealth+topic:domain:integration`
+- Topics Search: `https://github.com/search?q=org:cygnus-wealth+topic:domain-integration`
 - Team: `https://github.com/orgs/cygnus-wealth/teams/integration-team`
