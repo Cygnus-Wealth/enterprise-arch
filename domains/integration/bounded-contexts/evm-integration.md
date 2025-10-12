@@ -1,8 +1,12 @@
-# EVM Integration Domain
+# EVM Integration
 
-## Domain Overview
+> **Navigation**: [Integration Domain](../README.md) > [Bounded Contexts](../README.md#bounded-contexts) > EVM Integration
 
-The EVM Integration domain provides read-only blockchain data access for all Ethereum Virtual Machine compatible chains. It handles wallet tracking, balance queries, and transaction monitoring across multiple EVM networks, transforming blockchain data into the unified data model format.
+## Bounded Context Overview
+
+The EVM Integration bounded context provides read-only blockchain data access for all Ethereum Virtual Machine compatible chains. It handles wallet tracking, balance queries, and transaction monitoring across multiple EVM networks, transforming blockchain data into the unified data model format.
+
+**For context**: This bounded context specification is part of the Integration Domain. See the [Integration Domain README](../README.md) for strategic guidance and domain-level patterns.
 
 ## Core Responsibilities
 
@@ -202,3 +206,13 @@ This ensures consistent data structure regardless of the source chain.
 4. **Gas Optimization**: Gas price predictions and recommendations
 5. **Contract Interactions**: ABI decoding and method parsing
 6. **NFT Support**: Enhanced ERC-721/1155 handling
+
+---
+
+## Related Documentation
+
+- **[← Integration Domain README](../README.md)** - Domain overview and strategic guidance
+- **[Integration Patterns](../patterns.md)** - Apply domain patterns to this context
+- **[Resilience & Performance](../resilience-performance.md)** - Implement resilience strategies
+- **[Testing & Security](../testing-security.md)** - Apply testing and security standards
+- **Other Bounded Contexts**: [Wallet Integration System](./wallet-integration-system.md) | [Solana Integration](./sol-integration.md) | [Robinhood Integration](./robinhood-integration.md)

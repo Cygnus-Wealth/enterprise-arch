@@ -1,8 +1,12 @@
-# Solana Integration Domain
+# Solana Integration
 
-## Domain Overview
+> **Navigation**: [Integration Domain](../README.md) > [Bounded Contexts](../README.md#bounded-contexts) > Solana Integration
 
-The Solana Integration domain provides read-only access to Solana blockchain data. It handles wallet tracking, balance fetching for SOL and SPL tokens, NFT discovery, and transaction monitoring across the Solana network, transforming all data into the unified data model format.
+## Bounded Context Overview
+
+The Solana Integration bounded context provides read-only access to Solana blockchain data. It handles wallet tracking, balance fetching for SOL and SPL tokens, NFT discovery, and transaction monitoring across the Solana network, transforming all data into the unified data model format.
+
+**For context**: This bounded context specification is part of the Integration Domain. See the [Integration Domain README](../README.md) for strategic guidance and domain-level patterns.
 
 ## Core Responsibilities
 
@@ -191,3 +195,13 @@ The domain exposes services for data fetching:
 - Versioned transaction support
 - Priority fee optimization
 - Advanced caching strategies
+
+---
+
+## Related Documentation
+
+- **[← Integration Domain README](../README.md)** - Domain overview and strategic guidance
+- **[Integration Patterns](../patterns.md)** - Apply domain patterns to this context
+- **[Resilience & Performance](../resilience-performance.md)** - Implement resilience strategies
+- **[Testing & Security](../testing-security.md)** - Apply testing and security standards
+- **Other Bounded Contexts**: [Wallet Integration System](./wallet-integration-system.md) | [EVM Integration](./evm-integration.md) | [Robinhood Integration](./robinhood-integration.md)

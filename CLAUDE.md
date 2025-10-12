@@ -1,0 +1,1 @@
+- "system" and "bounded context" are synonymous.

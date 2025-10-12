@@ -220,6 +220,17 @@ All other domains depend on contracts:
 5. Documentation update
 6. Version release
 
+### Architecture Reviews
+
+The Contract Domain undergoes periodic architectural reviews to ensure alignment with enterprise principles and maintain foundational integrity. Historical reviews are preserved for architectural transparency and decision traceability:
+
+- **[Architecture Reviews Archive](./architecture-reviews/)** - Contains completed architectural assessments and responses
+  - System Architect responses to domain reviews
+  - Domain Architect assessments and guidance
+  - Architectural decision rationale and evolution
+
+These reviews document critical decisions including governance frameworks, documentation philosophy (JSDoc as contract), stability tiers, and versioning strategies.
+
 ## Best Practices
 
 ### Design Guidelines

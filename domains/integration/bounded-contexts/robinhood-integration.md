@@ -1,8 +1,12 @@
-# Robinhood Integration Domain
+# Robinhood Integration
 
-## Domain Overview
+> **Navigation**: [Integration Domain](../README.md) > [Bounded Contexts](../README.md#bounded-contexts) > Robinhood Integration
 
-The Robinhood Integration domain provides read-only access to Robinhood brokerage accounts, enabling users to include their traditional finance (TradFi) holdings in their aggregated portfolio. It handles authentication, data fetching, and transformation of stock and cryptocurrency positions from Robinhood.
+## Bounded Context Overview
+
+The Robinhood Integration bounded context provides read-only access to Robinhood brokerage accounts, enabling users to include their traditional finance (TradFi) holdings in their aggregated portfolio. It handles authentication, data fetching, and transformation of stock and cryptocurrency positions from Robinhood.
+
+**For context**: This bounded context specification is part of the Integration Domain. See the [Integration Domain README](../README.md) for strategic guidance and domain-level patterns.
 
 ## Core Responsibilities
 
@@ -216,3 +220,13 @@ The domain exposes services for Robinhood data:
 - Portfolio performance metrics
 - Automated alert system
 - Multi-account aggregation
+
+---
+
+## Related Documentation
+
+- **[← Integration Domain README](../README.md)** - Domain overview and strategic guidance
+- **[Integration Patterns](../patterns.md)** - Apply domain patterns to this context
+- **[Resilience & Performance](../resilience-performance.md)** - Implement resilience strategies
+- **[Testing & Security](../testing-security.md)** - Apply testing and security standards
+- **Other Bounded Contexts**: [Wallet Integration System](./wallet-integration-system.md) | [EVM Integration](./evm-integration.md) | [Solana Integration](./sol-integration.md)

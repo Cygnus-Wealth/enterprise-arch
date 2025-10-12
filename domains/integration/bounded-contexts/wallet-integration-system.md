@@ -1,8 +1,12 @@
 # Wallet Integration System
 
+> **Navigation**: [Integration Domain](../README.md) > [Bounded Contexts](../README.md#bounded-contexts) > Wallet Integration System
+
 ## Bounded Context Overview
 
 The Wallet Integration System manages connections to cryptocurrency wallets and wallet providers. It handles the complexity of different wallet standards, connection protocols, and session management, providing a unified interface for wallet interactions across all supported chains.
+
+**For context**: This bounded context specification is part of the Integration Domain. See the [Integration Domain README](../README.md) for strategic guidance and domain-level patterns.
 
 ## Core Responsibilities
 
@@ -235,3 +239,13 @@ The system exposes services for wallet management:
 - Multi-signature wallet handling
 - Mobile wallet deep linking
 - Wallet analytics and insights
+
+---
+
+## Related Documentation
+
+- **[← Integration Domain README](../README.md)** - Domain overview and strategic guidance
+- **[Integration Patterns](../patterns.md)** - Apply domain patterns to this context
+- **[Resilience & Performance](../resilience-performance.md)** - Implement resilience strategies
+- **[Testing & Security](../testing-security.md)** - Apply testing and security standards
+- **Other Bounded Contexts**: [EVM Integration](./evm-integration.md) | [Solana Integration](./sol-integration.md) | [Robinhood Integration](./robinhood-integration.md)
