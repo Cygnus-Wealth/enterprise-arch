@@ -12,6 +12,7 @@ This README is the root document for the Integration Domain. Navigate to specifi
 
 - **[Integration Patterns](./patterns.md)** - Implementation patterns for System Architects
 - **[Resilience & Performance](./resilience-performance.md)** - Strategies for building resilient, performant integrations
+- **[RPC Node Strategy](./rpc-strategy.md)** - Provider selection, free tier allocation, and fallback strategy per chain
 - **[Testing & Security](./testing-security.md)** - Comprehensive testing and security guidance
 - **[Bounded Contexts](./bounded-contexts/)** - Individual context specifications
   - [Wallet Integration System](./bounded-contexts/wallet-integration-system.md)
@@ -345,6 +346,12 @@ When implementing bounded contexts within this domain:
   - Resource Management
   - Degradation Strategies
 
+- **[RPC Node Strategy](./rpc-strategy.md)** - Provider evaluation and selection for all chains:
+  - Recommended provider per chain with fallback tiers
+  - Free tier allocation for development
+  - Production scaling path (Phase 1 through Enterprise)
+  - Fallback architecture and failover rules
+
 - **[Testing and Security Strategy](./testing-security.md)** - Comprehensive quality and security guidance:
   - Testing Pyramid (Unit, Integration, Contract, E2E)
   - Test Patterns and Fixtures
@@ -365,7 +372,7 @@ When implementing bounded contexts within this domain:
 - `data-models`: Unified data structure definitions (Contract Domain)
 
 ### External Dependencies
-- Blockchain RPC providers (Infura, Alchemy, QuickNode)
+- Blockchain RPC providers (Alchemy, dRPC, Helius, Infura, Ankr) — see [RPC Node Strategy](./rpc-strategy.md)
 - Exchange APIs (Robinhood, future: Coinbase, Kraken)
 - Price aggregator services (CoinGecko, CoinMarketCap)
 - Market data feeds (real-time price updates)
