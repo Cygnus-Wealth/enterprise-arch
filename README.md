@@ -86,6 +86,7 @@ See [Repository Organization Strategy](./repository-organization.md) for detaile
 
 ### Architecture Documents
 - [Domain Contracts](./contracts.md) - Inter-domain communication contracts
+- [E2E Testing Strategy](./e2e-testing-strategy.md) - Enterprise-wide E2E testing policy per bounded context
 
 ## Repository Organization
 
