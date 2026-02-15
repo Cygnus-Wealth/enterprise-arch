@@ -14,22 +14,22 @@ This document defines the RPC provider strategy for CygnusWealth's Integration D
 
 | Provider | Type | Free Tier | Chains | Strengths |
 |----------|------|-----------|--------|-----------|
-| **Alchemy** | Managed | 30M CU/mo | 70+ (EVM + Solana) | Best EVM tooling, reliable, Enhanced APIs |
-| **Infura** | Managed | 3M credits/day | ~12 (EVM only) | Mature, Ethereum-focused, MetaMask parent |
-| **Ankr** | Decentralized | Public endpoints free | 80+ | Public RPCs, broad chain support |
-| **dRPC** | Decentralized | 210M CU/mo | 80+ (EVM + Solana) | Most generous free tier, MEV protection |
-| **QuickNode** | Managed | Trial only | 80+ (EVM + Solana) | Enterprise-grade, broad chain support |
-| **Helius** | Managed (Solana) | 1M credits/mo | Solana only | Solana-native, best Solana tooling |
+| **Alchemy** | Managed | 30M CU/mo | 100+ (EVM + Solana) | Best EVM tooling, reliable, Enhanced APIs |
+| **Infura** | Managed | 3M credits/day | 20+ (EVM + Solana) | Mature, Ethereum-focused, MetaMask parent |
+| **Ankr** | Decentralized | Public endpoints free, 200M credits on freemium | 40+ public, 80+ premium | Public RPCs, broad chain support |
+| **dRPC** | Decentralized | 210M CU/mo | 180+ (EVM + Solana) | Most generous free tier, MEV protection (paid only) |
+| **QuickNode** | Managed | 10M credits/mo | 80+ (EVM + Solana) | Enterprise-grade, SOC 2 / ISO 27001 certified |
+| **Helius** | Managed (Solana) | 1M credits/mo | Solana only | Solana-native, best Solana tooling, Gatekeeper Edge |
 | **Public RPCs** | Community | Free, no signup | Varies | No auth, instant access, rate-limited |
 
 ### Key Findings
 
-1. **dRPC** offers the most generous free tier (210M CU/mo) with broad chain coverage including Solana
-2. **Alchemy** provides the best developer experience with 30M CU/mo free across 70+ chains
-3. **Helius** is the clear winner for Solana-specific features and optimization
-4. **Infura** does not support BNB Chain, Base, Fantom, or Solana
-5. **QuickNode** lacks a permanent free tier, making it better suited as a paid production option
-6. **Ankr** provides ungated public endpoints for all supported chains
+1. **dRPC** offers the most generous free tier (210M CU/mo) with 180+ chains including Solana
+2. **Alchemy** provides the best developer experience with 30M CU/mo free across 100+ chains; Growth/Scale tiers deprecated in favor of Pay-As-You-Go ($0.45/1M CU)
+3. **Helius** is the clear winner for Solana with Gatekeeper Edge Gateway (Feb 2026) reducing latency 4-7x
+4. **Infura** now supports 20+ chains including Base, Solana, and BNB (via opBNB L2); still no native Fantom support
+5. **QuickNode** now offers a permanent free tier (10M credits/mo, 15 RPS) with SOC 2 Type II and ISO 27001 certifications
+6. **Ankr** provides ungated public endpoints for 40+ chains at ~30 RPS; freemium tier adds 200M monthly credits
 
 ## Recommended Provider per Chain
 
@@ -88,7 +88,7 @@ This document defines the RPC provider strategy for CygnusWealth's Integration D
 | **Tertiary** | Ankr | Public | `https://rpc.ankr.com/bsc` |
 | **Emergency** | Public | Community | `https://bsc-dataseed.binance.org`, `https://1rpc.io/bnb` |
 
-**Note**: Infura does not support BNB Chain. QuickNode supports it on paid plans.
+**Note**: Infura supports BNB ecosystem via opBNB (L2) only, not BSC mainnet directly. QuickNode supports BSC on all tiers including free.
 
 **Dev/Testnet**: dRPC free tier on BSC Testnet, Ankr public endpoints
 
@@ -109,10 +109,8 @@ This document defines the RPC provider strategy for CygnusWealth's Integration D
 |------|----------|--------------|-----------|
 | **Primary** | Alchemy | Managed (API key) | Strong OP Stack / Base support |
 | **Secondary** | dRPC | Managed (API key) | Good Base performance |
-| **Tertiary** | Ankr | Public | `https://rpc.ankr.com/base` |
+| **Tertiary** | Infura | Managed (API key) | Base now supported on Infura |
 | **Emergency** | Public | Community | `https://mainnet.base.org`, `https://1rpc.io/base` |
-
-**Note**: Infura does not support Base.
 
 **Dev/Testnet**: Alchemy free tier on Base Sepolia
 
@@ -125,7 +123,7 @@ This document defines the RPC provider strategy for CygnusWealth's Integration D
 | **Tertiary** | Public | Community | `https://rpcapi.fantom.network`, `https://rpc.ftm.tools` |
 | **Emergency** | Public | Community | `https://1rpc.io/ftm`, `https://fantom-mainnet.public.blastapi.io` |
 
-**Note**: Alchemy has deprecated Fantom support. Infura does not support Fantom. Consider monitoring Sonic (Fantom's successor chain) for future migration.
+**Note**: Alchemy has deprecated Fantom support. Infura does not support Fantom natively. QuickNode supports Fantom on all tiers including free. Consider monitoring Sonic (Fantom's successor chain) for future migration.
 
 **Dev/Testnet**: dRPC free tier on Fantom Testnet, Ankr public endpoints
 
@@ -133,19 +131,22 @@ This document defines the RPC provider strategy for CygnusWealth's Integration D
 
 | Role | Provider | Endpoint Type | Rationale |
 |------|----------|--------------|-----------|
-| **Primary** | Helius | Managed (API key) | Solana-native, best tooling, DAS API, staked connections |
+| **Primary** | Helius | Managed (API key) | Solana-native, best tooling, DAS API, staked connections by default on paid plans |
 | **Secondary** | Alchemy | Managed (API key) | Multi-chain consistency, good Solana support |
-| **Tertiary** | dRPC | Managed (API key) | Generous free tier, decentralized fallback |
+| **Tertiary** | dRPC | Managed (API key) | Generous free tier, stake-weighted QoS on Solana, decentralized fallback |
+| **Quaternary** | Infura | Managed (API key) | Solana now supported on Infura free tier |
 | **Emergency** | Public | Community | `https://api.mainnet-beta.solana.com` (rate-limited) |
 
 **Dev/Testnet**: Helius free tier on Devnet (primary), Alchemy free tier on Devnet (secondary)
 
 **Solana-Specific Considerations**:
-- Helius provides staked connections on all tiers (important for transaction landing)
-- Helius DAS API is essential for compressed NFTs and token metadata
+- Helius staked connections now included by default on all paid plans (1 credit/tx, down from 50)
+- Helius Gatekeeper Edge Gateway (Feb 2026): 4.6x faster new connections, 7.8x faster reused connections
+- Helius DAS API is essential for compressed NFTs and token metadata (2 RPS on free, up to 100 RPS on Professional)
+- dRPC now supports stake-weighted QoS on Solana endpoints
 - Public Solana RPC (`api.mainnet-beta.solana.com`) is heavily rate-limited; avoid relying on it
 - Helius free tier (1M credits, 10 RPS) is sufficient for development
-- For production, Helius Developer ($49/mo) or Business ($499/mo) tiers scale well
+- For production, Helius Developer ($49/mo, 50 RPS) or Business ($499/mo, 200 RPS) tiers scale well
 
 ## Development Environment Strategy
 
@@ -156,12 +157,13 @@ For development and testing, the combined free tiers provide substantial capacit
 | Provider | Free Allocation | Primary Use |
 |----------|----------------|-------------|
 | dRPC | 210M CU/mo, 100 RPS | EVM chains primary dev provider |
-| Alchemy | 30M CU/mo, ~300 RPS | Enhanced APIs, fallback for all chains |
+| Alchemy | 30M CU/mo, ~25 RPS (500 CU/s) | Enhanced APIs, fallback for all chains |
 | Helius | 1M credits/mo, 10 RPS | Solana development |
-| Infura | 3M credits/day | Ethereum/L2 supplementary |
-| Ankr | Public (no limit*) | Emergency fallback, quick prototyping |
+| QuickNode | 10M credits/mo, 15 RPS | Supplementary for all chains |
+| Infura | 3M credits/day, 500 credits/s | Ethereum/L2/Solana supplementary |
+| Ankr | 200M credits/mo (freemium), ~30 RPS | Emergency fallback, quick prototyping |
 
-*Ankr public endpoints are rate-limited but have no monthly cap.
+*Ankr public endpoints are rate-limited (~30 RPS) but freemium tier provides 200M monthly credits at no cost.
 
 ### Development Workflow
 
@@ -188,19 +190,20 @@ Phase 1 (MVP / Low Traffic)
 └── Cost: $0/mo
 
 Phase 2 (Growing / Moderate Traffic)
-├── EVM: Alchemy Pay-As-You-Go ($0.45/1M CU) + dRPC Growth ($6/1M req)
-├── Solana: Helius Developer ($49/mo, 10M credits)
+├── EVM: Alchemy PAYG ($0.45/1M CU) + dRPC Growth ($0.30/1M CU)
+├── Solana: Helius Developer ($49/mo, 10M credits, 50 RPS)
 └── Estimated Cost: $50-150/mo
 
 Phase 3 (Scale / High Traffic)
-├── EVM: Alchemy Growth plan + dRPC Growth (volume pricing)
-├── Solana: Helius Business ($499/mo, 100M credits)
-└── Estimated Cost: $500-1000/mo
+├── EVM: Alchemy PAYG (volume) + dRPC Growth (5K RPS)
+├── Solana: Helius Business ($499/mo, 100M credits, 200 RPS)
+├── Backup: QuickNode Scale ($499/mo, 950M credits, 250 RPS)
+└── Estimated Cost: $500-1500/mo
 
 Phase 4 (Enterprise / High Volume)
-├── EVM: Alchemy Enterprise + dRPC Enterprise (custom SLA)
-├── Solana: Helius Professional ($999/mo) or Enterprise
-├── Backup: QuickNode dedicated nodes for critical paths
+├── EVM: Alchemy Enterprise + dRPC Enterprise (custom SLA, unlimited RPS)
+├── Solana: Helius Professional ($999/mo, 200M credits, 500 RPS) or Enterprise
+├── Backup: QuickNode Business ($999/mo, 2B credits, 500 RPS)
 └── Estimated Cost: $2000+/mo (negotiable)
 ```
 
@@ -208,13 +211,14 @@ Phase 4 (Enterprise / High Volume)
 
 Configure rate limiters per provider to stay within plan limits:
 
-| Provider | Free Tier RPS | Growth RPS | Enterprise RPS |
-|----------|--------------|------------|----------------|
-| Alchemy | ~300 | ~300 | Custom |
-| dRPC | 100 | 5,000 | Unlimited |
-| Helius | 10 | 50 | 500+ |
-| Infura | ~33 (2K credits/sec) | ~83 | Custom |
-| Ankr (public) | ~30 (soft limit) | N/A | N/A |
+| Provider | Free Tier RPS | Paid RPS | Enterprise RPS |
+|----------|--------------|----------|----------------|
+| Alchemy | ~25 (500 CU/s) | ~300 (10K CU/s PAYG) | Custom |
+| dRPC | 100 | 5,000 (Growth) | Unlimited |
+| Helius | 10 | 50 (Dev) / 200 (Biz) | 500+ (Pro) |
+| QuickNode | 15 | 50-250 (Build-Scale) | 500-100K+ |
+| Infura | ~500 credits/s | 4K credits/s (Dev) | Elastic |
+| Ankr (public) | ~30 | 1,500 (Premium PAYG) | Custom |
 
 ## Fallback Strategy
 
@@ -319,13 +323,14 @@ All RPC provider usage must adhere to the Integration Domain's security principl
 
 | Decision | Rationale | Date |
 |----------|-----------|------|
-| Alchemy as primary EVM provider | Best DX, Enhanced APIs, broad chain support, generous free tier | 2026-02-14 |
-| dRPC as secondary EVM provider | Most generous free tier (210M CU), decentralized architecture, MEV protection | 2026-02-14 |
-| Helius as primary Solana provider | Solana-native optimization, DAS API, staked connections, endorsed by Solana team | 2026-02-14 |
-| Infura as tertiary (select chains) | Limited chain support excludes BNB/Base/Fantom; useful for Ethereum/Arbitrum/Optimism/Avalanche | 2026-02-14 |
-| Fantom uses dRPC as primary | Alchemy deprecated Fantom; dRPC has active Fantom support | 2026-02-14 |
-| QuickNode reserved for production | No permanent free tier; better as dedicated production option at scale | 2026-02-14 |
+| Alchemy as primary EVM provider | Best DX, Enhanced APIs, 100+ chains, PAYG pricing ($0.45/1M CU) | 2026-02-14 |
+| dRPC as secondary EVM provider | Most generous free tier (210M CU), 180+ chains, decentralized architecture | 2026-02-14 |
+| Helius as primary Solana provider | Solana-native, DAS API, staked connections default on paid, Gatekeeper Edge (4-7x latency improvement) | 2026-02-14 |
+| Infura as tertiary (expanded role) | Now supports 20+ chains including Base, Solana, and BNB (opBNB); still no native Fantom | 2026-02-14 |
+| Fantom uses dRPC as primary | Alchemy deprecated Fantom; dRPC has active Fantom support across 180+ chains | 2026-02-14 |
+| QuickNode as supplementary provider | Now has permanent free tier (10M credits/mo, 15 RPS); SOC 2 / ISO 27001 certified; good production backup | 2026-02-14 |
 | Multi-provider fallback for all chains | Aligns with domain resilience principles; no single point of failure | 2026-02-14 |
+| dRPC MEV protection paid-only | MEV protection on Ethereum, Base, BNB, Polygon, Solana requires paid tier | 2026-02-14 |
 
 ## Related Documentation
 
