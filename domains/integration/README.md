@@ -19,6 +19,7 @@ This README is the root document for the Integration Domain. Navigate to specifi
   - [EVM Integration](./bounded-contexts/evm-integration.md)
   - [Solana Integration](./bounded-contexts/sol-integration.md)
   - [Robinhood Integration](./bounded-contexts/robinhood-integration.md)
+  - [Coinbase Integration](./bounded-contexts/coinbase-integration.md)
 
 ## Strategic Purpose
 
@@ -107,6 +108,11 @@ This domain forms the foundation for all portfolio data acquisition, ensuring th
 │  │                      │    │                      │      │
 │  └──────────────────────┘    └──────────────────────┘      │
 │                                                              │
+│                    ┌──────────────────────┐                  │
+│                    │ Coinbase Integration │                  │
+│                    │                      │                  │
+│                    └──────────────────────┘                  │
+│                                                              │
 │                    All contexts publish to:                  │
 │                          ▼                                   │
 │              [Unified Data Models - Contract Domain]         │
@@ -152,6 +158,16 @@ This domain forms the foundation for all portfolio data acquisition, ensuring th
   - Cash balance retrieval
   - Historical performance data
 - **Documentation**: [Detailed Context](./bounded-contexts/robinhood-integration.md)
+
+### 5. Coinbase Integration
+- **Responsibility**: Centralized exchange account and trading data
+- **Repository**: `coinbase-integration`
+- **Key Capabilities**:
+  - Spot balance tracking across all account types
+  - Staking and Earn position visibility
+  - Trade and order history with fill detail
+  - Real-time price and account updates via WebSocket
+- **Documentation**: [Detailed Context](./bounded-contexts/coinbase-integration.md)
 
 ## Contracts and Integration Patterns
 
@@ -276,7 +292,7 @@ Domain-level rate limit management across contexts:
 
 ### Planned Integrations
 - **Bitcoin & Lightning**: Native BTC and Layer 2
-- **Additional CEX**: Coinbase, Kraken, Binance
+- **Additional CEX**: Kraken, Binance
 - **DeFi Protocols**: Direct protocol integrations
 - **Cross-chain Bridges**: Bridge position tracking
 
@@ -365,6 +381,7 @@ When implementing bounded contexts within this domain:
 - **[EVM Integration](./bounded-contexts/evm-integration.md)** - Ethereum and EVM-compatible blockchain data
 - **[Solana Integration](./bounded-contexts/sol-integration.md)** - Solana blockchain and SPL tokens
 - **[Robinhood Integration](./bounded-contexts/robinhood-integration.md)** - Traditional finance brokerage data
+- **[Coinbase Integration](./bounded-contexts/coinbase-integration.md)** - Centralized exchange account and trading data
 
 ## Dependencies
 
@@ -373,7 +390,7 @@ When implementing bounded contexts within this domain:
 
 ### External Dependencies
 - Blockchain RPC providers (Alchemy, dRPC, Helius, Infura, Ankr) — see [RPC Node Strategy](./rpc-strategy.md)
-- Exchange APIs (Robinhood, future: Coinbase, Kraken)
+- Exchange APIs (Robinhood, Coinbase, future: Kraken, Binance)
 - Price aggregator services (CoinGecko, CoinMarketCap)
 - Market data feeds (real-time price updates)
 

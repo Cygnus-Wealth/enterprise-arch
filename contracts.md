@@ -33,10 +33,10 @@ This document defines the contracts and communication patterns between domains i
 └──────┬─────────────────┬──────────────────┬─────────┘
        │                 │                  │
        ▼                 ▼                  ▼
-┌──────────────┐  ┌──────────────┐  ┌─────────────────────────┐
-│asset-valuator│  │evm-integration│  │sol-integration/robinhood│
-│(Portfolio)   │  │(Integration)  │  │     (Integration)       │
-└──────┬───────┘  └──────┬────────┘  └──────────┬──────────────┘
+┌──────────────┐  ┌──────────────┐  ┌─────────────────────────┐  ┌────────────┐
+│asset-valuator│  │evm-integration│  │sol-integration/robinhood│  │  coinbase  │
+│(Portfolio)   │  │(Integration)  │  │     (Integration)       │  │(Integration)│
+└──────┬───────┘  └──────┬────────┘  └──────────┬──────────────┘  └─────┬──────┘
        │                 │                       │
        ▼                 ▼                       ▼
 ┌──────────────────────────────────────────────────────────────┐
@@ -123,6 +123,40 @@ BlockchainIntegrationContract {
 2. Blockchain integrations fetch on-chain data
 3. Data transformed to unified models
 4. Returned to portfolio aggregation for combining
+
+### Contract: Portfolio Aggregation → CEX Integration (Coinbase, Robinhood)
+
+**Purpose**: Fetch account data from centralized exchange integrations
+
+**Interface**:
+```
+CEXIntegrationContract {
+  // Commands
+  connect(authConfig): ConnectionResult
+  disconnect(): void
+
+  // Queries
+  getAccounts(): CEXAccountList
+  getBalances(): BalanceList
+  getTransactions(options): TransactionList
+  getStakingPositions(): StakingPositionList
+
+  // Real-time
+  subscribeToUpdates(): Subscription
+
+  // Events
+  onConnected: Event
+  onDisconnected: Event
+  onAuthExpired: Event
+}
+```
+
+**Data Flow**:
+1. User authenticates with CEX via OAuth or API key
+2. Portfolio aggregation requests account data from CEX integration
+3. CEX integration fetches from exchange API, transforms to unified models
+4. Returns normalized data to portfolio aggregation
+5. Portfolio aggregation merges with on-chain data (on-chain preferred for duplicates)
 
 ### Contract: Portfolio Aggregation → Asset Valuator
 
