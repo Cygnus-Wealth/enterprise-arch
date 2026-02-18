@@ -20,6 +20,7 @@ This README is the root document for the Integration Domain. Navigate to specifi
   - [Solana Integration](./bounded-contexts/sol-integration.md)
   - [Robinhood Integration](./bounded-contexts/robinhood-integration.md)
   - [Coinbase Integration](./bounded-contexts/coinbase-integration.md)
+  - [Kraken Integration](./bounded-contexts/kraken-integration.md)
 
 ## Strategic Purpose
 
@@ -108,10 +109,10 @@ This domain forms the foundation for all portfolio data acquisition, ensuring th
 │  │                      │    │                      │      │
 │  └──────────────────────┘    └──────────────────────┘      │
 │                                                              │
-│                    ┌──────────────────────┐                  │
-│                    │ Coinbase Integration │                  │
-│                    │                      │                  │
-│                    └──────────────────────┘                  │
+│  ┌──────────────────────┐    ┌──────────────────────┐      │
+│  │ Coinbase Integration │    │ Kraken Integration   │      │
+│  │                      │    │                      │      │
+│  └──────────────────────┘    └──────────────────────┘      │
 │                                                              │
 │                    All contexts publish to:                  │
 │                          ▼                                   │
@@ -168,6 +169,17 @@ This domain forms the foundation for all portfolio data acquisition, ensuring th
   - Trade and order history with fill detail
   - Real-time price and account updates via WebSocket
 - **Documentation**: [Detailed Context](./bounded-contexts/coinbase-integration.md)
+
+### 6. Kraken Integration
+- **Responsibility**: Kraken centralized exchange data (crypto spot, margin, staking)
+- **Repository**: `kraken-integration`
+- **Key Capabilities**:
+  - Spot and margin balance retrieval
+  - Trade history and ledger entries
+  - Open margin position tracking
+  - Staking position and reward tracking
+- **Documentation**: [Detailed Context](./bounded-contexts/kraken-integration.md)
+- **Architecture Directive**: [hq-su5pt](../../mayor/hq-su5pt-kraken-cex-integration.md)
 
 ## Contracts and Integration Patterns
 
@@ -292,7 +304,7 @@ Domain-level rate limit management across contexts:
 
 ### Planned Integrations
 - **Bitcoin & Lightning**: Native BTC and Layer 2
-- **Additional CEX**: Kraken, Binance
+- **Additional CEX**: Binance
 - **DeFi Protocols**: Direct protocol integrations
 - **Cross-chain Bridges**: Bridge position tracking
 
@@ -382,6 +394,7 @@ When implementing bounded contexts within this domain:
 - **[Solana Integration](./bounded-contexts/sol-integration.md)** - Solana blockchain and SPL tokens
 - **[Robinhood Integration](./bounded-contexts/robinhood-integration.md)** - Traditional finance brokerage data
 - **[Coinbase Integration](./bounded-contexts/coinbase-integration.md)** - Centralized exchange account and trading data
+- **[Kraken Integration](./bounded-contexts/kraken-integration.md)** - Kraken CEX cryptocurrency data
 
 ## Dependencies
 
@@ -390,7 +403,7 @@ When implementing bounded contexts within this domain:
 
 ### External Dependencies
 - Blockchain RPC providers (Alchemy, dRPC, Helius, Infura, Ankr) — see [RPC Node Strategy](./rpc-strategy.md)
-- Exchange APIs (Robinhood, Coinbase, future: Kraken, Binance)
+- Exchange APIs (Robinhood, Coinbase, Kraken, future: Binance)
 - Price aggregator services (CoinGecko, CoinMarketCap)
 - Market data feeds (real-time price updates)
 
