@@ -166,42 +166,40 @@ The following types are added or extended in the shared `data-models` package:
 
 ## 6. Cross-Domain Contract Amendments
 
+> **Scope note:** This section defines WHAT must cross domain boundaries — the required capabilities and data. Specific API names, method signatures, and event naming are Domain Arch concerns. Each domain designs its own interface to fulfill these requirements.
+
 ### App → WalletIntegration (Extended)
 
-Building on en-fr0z:
+Building on en-fr0z, the App → WalletIntegration boundary must support these new cross-domain capabilities:
 
-**New commands:**
-- `connectWallet(walletId, options?)` — options include which `ChainFamily[]` to connect (default: all supported)
-- `connectChainFamily(connectionId, chainFamily)` — add a chain family to an existing connection
-- `disconnectChainFamily(connectionId, chainFamily)` — remove a chain family without disconnecting the whole wallet
-- `initiateWalletConnect(options)` — start a WalletConnect v2 session with required/optional chain families
+**New command capabilities:**
+- **Connect with chain family selection** — App must be able to initiate a wallet connection specifying which `ChainFamily` values to connect (default: all supported by the wallet)
+- **Per-chain-family connect/disconnect** — App must be able to add or remove individual chain families from an existing connection without disconnecting the entire wallet
+- **WalletConnect v2 session initiation** — App must be able to start a WalletConnect v2 session specifying required and optional chain families
 
-**New queries:**
-- `getAvailableWallets()` — returns `DiscoveredWallet[]` (replaces en-fr0z's `WalletProviderInfo[]`)
-- `getWalletCapabilities(walletId)` — returns which chain families a wallet supports
+**New query capabilities:**
+- **Discovered wallet enumeration** — App must be able to retrieve the list of `DiscoveredWallet` entries (replaces en-fr0z's provider info with chain-family-aware discovery results)
+- **Wallet capability inquiry** — App must be able to query which `ChainFamily` values a specific wallet supports
 
-**New events:**
-- `onWalletsDiscovered` — emitted when discovery completes with correlated multi-chain wallet list
-- `onChainFamilyConnected` — emitted when a chain family is added to an existing connection
-- `onChainFamilyDisconnected` — emitted when a chain family is removed
+**New event capabilities:**
+- **Discovery completion** — WalletIntegration must notify the App when provider discovery completes with the correlated multi-chain wallet list
+- **Chain family connection change** — WalletIntegration must notify the App when a chain family is added to or removed from an existing connection
 
-Existing en-fr0z events (`onWalletConnected`, `onAccountDiscovered`) continue to fire.
+Existing en-fr0z event contracts (`onWalletConnected`, `onAccountDiscovered`) continue unchanged.
 
 ### PortfolioAggregation → WalletIntegration (Extended)
 
-Building on en-fr0z:
+Building on en-fr0z, the PortfolioAggregation → WalletIntegration boundary requires:
 
-**Extended queries:**
-- `getTrackedAddresses()` — `TrackedAddress` now includes `chainFamily: ChainFamily`
-- `getTrackedAddressesByChainFamily(chainFamily)` — filter tracked addresses by chain family
-- `getChainFamiliesForConnection(connectionId)` — which chain families are active for a connection
+- **Chain-family-aware tracked addresses** — `TrackedAddress` data crossing this boundary must include `chainFamily: ChainFamily`
+- **Chain-family filtering** — PortfolioAggregation must be able to query tracked addresses filtered by `ChainFamily`
+- **Connection chain family inquiry** — PortfolioAggregation must be able to determine which chain families are active for a given connection
 
 ### PortfolioAggregation → Blockchain Integrations (Extended)
 
-**`AddressRequest`** gains `chainFamily`:
-- `chainFamily: ChainFamily` — determines which integration bounded context handles the request
+- **Chain-family-tagged requests** — `AddressRequest` data crossing this boundary must include `chainFamily: ChainFamily`, which determines which integration bounded context handles the request
 
-**Routing rule:** PortfolioAggregation groups `TrackedAddress[]` by `chainFamily` and dispatches each group to the corresponding integration bounded context.
+**Routing rule:** PortfolioAggregation groups tracked addresses by `chainFamily` and dispatches each group to the corresponding integration bounded context.
 
 ### Unchanged Contracts
 
@@ -324,7 +322,7 @@ The `ChainFamily` enum is deliberately closed. Adding new families (e.g., `'polk
 | Contract | Change from en-fr0z | Details |
 |----------|---------------------|---------|
 | App → Wallet Integration | **Extended** | Discovery returns `DiscoveredWallet` with chain family capabilities; connection options include chain family selection |
-| Portfolio Aggregation → Wallet Integration | **Extended** | `TrackedAddress` includes `chainFamily`; new `getTrackedAddressesByChainFamily()` query |
+| Portfolio Aggregation → Wallet Integration | **Extended** | `TrackedAddress` includes `chainFamily`; chain-family filtering and connection inquiry capabilities added |
 | Portfolio Aggregation → Blockchain Integrations | **Extended** | `AddressRequest` includes `chainFamily` for routing; routing dispatches to correct integration BC |
 | App → Portfolio Aggregation | **No change** | Per-account/per-wallet queries work naturally with multi-chain accounts |
 | Portfolio Aggregation → Asset Valuator | **No change** | Asset valuation is chain-family-agnostic |
