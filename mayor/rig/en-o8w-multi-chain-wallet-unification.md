@@ -238,7 +238,7 @@ en-fr0z defined `WalletConnection`, `ConnectedAccount`, `WatchAddress`, and supp
 **`AccountId`** — format extended for chain-family namespacing:
 - Old format (en-fr0z): `{walletConnectionId}:{checksummedAddress}`
 - New format: `{walletConnectionId}:{chainFamily}:{address}`
-  - Example EVM: `phantom:a1b2c3d4:evm:0xAbC...123`
+  - Example EVM: `phantom:a1b2c3d4:evm:0xAbC...123` (where `phantom:a1b2c3d4` is the full WalletConnectionId per en-fr0z format `{providerId}:{randomId}`)
   - Example Solana: `phantom:a1b2c3d4:solana:7nYB...xyz`
   - Example Bitcoin: `phantom:a1b2c3d4:bitcoin:bc1q...abc`
   - Watch addresses: `watch:{chainFamily}:{address}`
@@ -365,6 +365,19 @@ Implementations:
 - `CosmosChainFamilyAdapter` — uses wallet-specific global injection providers (Keplr interface)
 - `AptosChainFamilyAdapter` — uses Wallet Standard wallet object
 
+### Chain Scope Semantics for Non-EVM Families
+
+en-fr0z's `chainScope: ChainId[]` on `ConnectedAccount` was designed for EVM, where one address is valid across many chains (Ethereum, Polygon, Arbitrum, etc.). For non-EVM chain families, chain scope semantics differ:
+
+- **EVM**: One address, many chains. Chain scope is a user-configurable list of which EVM chains to track. Default: all supported.
+- **Solana**: One address, one chain (mainnet). Chain scope defaults to `['solana-mainnet']`. Devnet/testnet may be added for developer users but is not exposed by default.
+- **Sui**: One address, one chain (mainnet). Same as Solana.
+- **Bitcoin**: One address, one chain (mainnet). Chain scope defaults to `['bitcoin-mainnet']`. No user-facing chain scope picker — Bitcoin does not have meaningful chain scope like EVM.
+- **Cosmos**: One address per chain. Chain scope is meaningful — the user selects which Cosmos chains to enable (Cosmos Hub, Osmosis, Celestia, etc.). Each enabled chain produces a separate address via the wallet's `getKey(chainId)` method.
+- **Aptos**: One address, one chain (mainnet). Same as Solana/Sui.
+
+**UI implication**: The chain scope picker (from en-fr0z) only appears for EVM and Cosmos accounts. For Solana, Sui, Bitcoin, and Aptos, chain scope is pre-determined and not user-editable.
+
 ### Partial Connection Failures
 
 When connecting a multi-chain wallet, individual chain families may fail (user denies permission for one chain, provider crashes, etc.):
@@ -372,6 +385,20 @@ When connecting a multi-chain wallet, individual chain families may fail (user d
 - **Partial success is allowed.** If EVM connects but Solana fails, the `WalletConnection` is created with only EVM accounts. `supportedChainFamilies` still lists all families the wallet supports, but `chainProviders` only contains the successfully connected family.
 - **Retry per chain family.** The UI offers a "Connect {ChainFamily}" button for each unconnected chain family within an existing wallet connection.
 - **No cascading disconnection.** Disconnecting one chain family does NOT disconnect others within the same wallet connection.
+
+### Error Handling in Multi-Chain Connections
+
+**Discovery errors**: If `getWallets()` throws or EIP-6963 discovery times out (500ms), the discovery service falls back to known global injection points only. An error is logged but not surfaced to the user — the wallet list may simply be incomplete.
+
+**Connection errors per chain family**: Each chain family's connect call is independent. Failures produce a `ChainFamilyConnectionError` with `{ chainFamily, errorCode, message }`. Error codes include:
+- `USER_REJECTED` — user denied permission in wallet UI
+- `PROVIDER_UNAVAILABLE` — provider was discovered but is no longer available (extension disabled, wallet locked)
+- `TIMEOUT` — connect call did not respond within 10 seconds
+- `UNKNOWN` — unexpected error
+
+**Error surfacing**: The connection modal shows per-chain-family status: green check for connected, red X for failed with error message, spinner for pending. The user can retry individual chain families without restarting the entire connection flow.
+
+**Stale discovery**: If a wallet discovered at time T is unavailable at connection time T+N, the system retries discovery once (re-dispatch EIP-6963 / re-call `getWallets()`). If still unavailable, surface `PROVIDER_UNAVAILABLE` to the user.
 
 ---
 
@@ -471,7 +498,7 @@ SessionProposal {
 WalletConnect v2 sessions include peer metadata (the remote wallet's name and icon). This is used for:
 - `WalletConnection.connectionLabel` default value
 - `WalletConnection.providerIcon` value
-- Correlation: if the peer metadata name matches a known wallet in the correlation registry, the `providerId` is set accordingly (e.g., peer name "Trust Wallet" → `providerId: 'trust-wallet'`). Otherwise, `providerId: 'walletconnect'`.
+- `providerId` remains `'walletconnect'` regardless of peer metadata. Peer metadata names are unverified user-controlled strings from the remote wallet and MUST NOT be used for provider identity correlation. The peer's claimed name (e.g., "Trust Wallet") is stored as display metadata only — it does not grant the same trust level as a locally-detected EIP-6963 or Wallet Standard provider. The UI may show "WalletConnect (via Trust Wallet)" to convey the peer's claim without conflating it with a direct local connection.
 
 ---
 
@@ -581,10 +608,14 @@ WalletConnectionContract {
   initiateWalletConnect(options: WalletConnectOptions): WalletConnectSession
   approveWalletConnectSession(session: WalletConnectSession): WalletConnection
 
-  // NEW — Events
+  // NEW — Events (supplement en-fr0z events, do not replace them)
   onWalletsDiscovered: Event<DiscoveredWallet[]>
   onChainFamilyConnected: Event<{connectionId: WalletConnectionId, chainFamily: ChainFamily, accounts: ConnectedAccount[]}>
   onChainFamilyDisconnected: Event<{connectionId: WalletConnectionId, chainFamily: ChainFamily}>
+  // NOTE: en-fr0z's onWalletConnected and onAccountDiscovered still fire.
+  // For a multi-chain connect: onWalletConnected fires once (with the full WalletConnection),
+  // onChainFamilyConnected fires once per chain family, and onAccountDiscovered fires once per account.
+  // Order: onWalletConnected → onChainFamilyConnected (per family) → onAccountDiscovered (per account).
 }
 
 MultiChainConnectionOptions {
@@ -751,7 +782,7 @@ en-fr0z introduced the multi-wallet model. en-o8w extends it. The migration path
 
 2. **WalletConnection extension**: Existing connections gain `supportedChainFamilies: ['evm']` and a `chainProviders` map with one EVM entry. No data loss.
 
-3. **WatchAddress extension**: Existing watch addresses gain `chainFamily: 'evm'` (default, since only EVM was previously supported). Users can later update the chain family for addresses that are actually Solana/Sui/etc.
+3. **WatchAddress extension**: Existing watch addresses gain a `chainFamily` field inferred from their address format. Addresses matching EVM format (0x-prefixed, 20 bytes) default to `'evm'`. Addresses matching Solana format (base58, 32-44 chars) default to `'solana'`. If format detection is ambiguous, default to `'evm'` and let the user correct it. en-fr0z's `chainScope: ChainId[]` on watch addresses may contain non-EVM chains — the migration must respect this and derive `chainFamily` from the `chainScope` entries when available.
 
 4. **Schema versioning**:
    - en-fr0z Version 2: Multi-wallet multi-account model
