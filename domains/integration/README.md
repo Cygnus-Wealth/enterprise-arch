@@ -24,6 +24,7 @@ This README is the root document for the Integration Domain. Navigate to specifi
   - [en-o8w](./directives/en-o8w-multi-chain-wallet-unification.md) — Multi-chain wallet unification
   - [hq-onegb](./directives/hq-onegb-coinbase-cex-integration.md) — Coinbase CEX integration
   - [hq-su5pt](./directives/hq-su5pt-kraken-cex-integration.md) — Kraken CEX integration
+  - [en-a1jj](./directives/en-a1jj-bitcoin-on-chain-integration.md) — Bitcoin on-chain integration
 - **[Bounded Contexts](./bounded-contexts/)** - Individual context specifications
   - [Wallet Integration System](./bounded-contexts/wallet-integration-system.md)
   - [EVM Integration](./bounded-contexts/evm-integration.md)
