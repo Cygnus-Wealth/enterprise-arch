@@ -14,6 +14,16 @@ This README is the root document for the Integration Domain. Navigate to specifi
 - **[Resilience & Performance](./resilience-performance.md)** - Strategies for building resilient, performant integrations
 - **[RPC Node Strategy](./rpc-strategy.md)** - Provider selection, free tier allocation, and fallback strategy per chain
 - **[Testing & Security](./testing-security.md)** - Comprehensive testing and security guidance
+- **[Directives](./directives/)** - Architecture directives and recommendations
+  - [en-9qon](./directives/en-9qon-cross-chain-defi-architecture.md) — Cross-chain DeFi architecture
+  - [en-p0ha](./directives/en-p0ha-websocket-first-architecture.md) — WebSocket-first real-time data
+  - [en-tfkn](./directives/en-tfkn-decentralized-rpc-provider-strategy.md) — Decentralized RPC provider strategy
+  - [en-25w5](./directives/en-25w5-rpc-provider-fallback-chain.md) — RPC provider fallback chain
+  - [en-1mg1](./directives/en-1mg1-rpc-types-placement-analysis.md) — RPC types placement analysis
+  - [en-fr0z](./directives/en-fr0z-multi-wallet-multi-account-architecture.md) — Multi-wallet multi-account architecture
+  - [en-o8w](./directives/en-o8w-multi-chain-wallet-unification.md) — Multi-chain wallet unification
+  - [hq-onegb](./directives/hq-onegb-coinbase-cex-integration.md) — Coinbase CEX integration
+  - [hq-su5pt](./directives/hq-su5pt-kraken-cex-integration.md) — Kraken CEX integration
 - **[Bounded Contexts](./bounded-contexts/)** - Individual context specifications
   - [Wallet Integration System](./bounded-contexts/wallet-integration-system.md)
   - [EVM Integration](./bounded-contexts/evm-integration.md)
@@ -179,7 +189,7 @@ This domain forms the foundation for all portfolio data acquisition, ensuring th
   - Open margin position tracking
   - Staking position and reward tracking
 - **Documentation**: [Detailed Context](./bounded-contexts/kraken-integration.md)
-- **Architecture Directive**: [hq-su5pt](../../mayor/hq-su5pt-kraken-cex-integration.md)
+- **Architecture Directive**: [hq-su5pt](./directives/hq-su5pt-kraken-cex-integration.md)
 
 ## Contracts and Integration Patterns
 

@@ -84,6 +84,15 @@ See [Repository Organization Strategy](./repository-organization.md) for detaile
 #### Experience Domain
 - [CygnusWealth App](./domains/experience/bounded-contexts/cygnus-wealth-app.md) - Web application
 
+### Architecture Directives
+
+Directives are architecture decisions, analyses, and recommendations produced during bead work. They live inside their target domain under `directives/`.
+
+- **Integration Domain** ([9 directives](./domains/integration/directives/)) — RPC strategy, wallet architecture, CEX integrations
+- **Experience Domain** ([1 directive](./domains/experience/directives/)) — Dashboard analysis
+
+See each domain's README for the full directive index.
+
 ### Architecture Documents
 - [Domain Contracts](./contracts.md) - Inter-domain communication contracts
 - [E2E Testing Strategy](./e2e-testing-strategy.md) - Enterprise-wide E2E testing policy per bounded context

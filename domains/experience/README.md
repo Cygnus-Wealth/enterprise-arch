@@ -8,6 +8,12 @@ The Experience Domain encompasses all user-facing applications and interfaces fo
 
 This domain represents the user's window into the CygnusWealth system. It translates complex portfolio data into actionable insights through thoughtful UI/UX design, ensuring that decentralized finance remains accessible to all users regardless of technical expertise.
 
+## Directives
+
+Architecture directives and recommendations for this domain:
+
+- [cy-ehma](./directives/cy-ehma-dashboard-token-discovery-analysis.md) — Dashboard token discovery failure analysis
+
 ## Bounded Contexts
 
 ### 1. CygnusWealth App
