@@ -123,6 +123,7 @@ This preserves the unified portfolio model while capturing Bitcoin's native data
 | **Phantom** | Yes | Yes — `window.phantom.bitcoin.requestAccounts()` | Direct provider probe | Tier 1 |
 | **Coinbase Wallet (Onchain)** | Yes | No — injects EVM/Solana providers only | None (no BTC API surface) | Tier 3 (manual) |
 | **Trust Wallet** | Yes | No — injects `ethereum`, `solana`, `cosmos`, `aptos` only; no `trustwallet.bitcoin` | None (no BTC API surface) | Tier 3 (manual) |
+| **Slush** | No (SUI-only) | No — SUI wallet with no Bitcoin support | N/A | N/A |
 
 #### Tier 1: Direct Provider Detection
 
