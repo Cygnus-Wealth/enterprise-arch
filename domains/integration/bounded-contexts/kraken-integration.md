@@ -6,7 +6,7 @@
 
 The Kraken Integration bounded context provides read-only access to Kraken centralized exchange accounts, enabling users to include their Kraken cryptocurrency holdings, margin positions, staking positions, and trade history in their aggregated portfolio. It handles HMAC-SHA512 authentication, data fetching, and transformation of Kraken-specific data into the CygnusWealth unified data models.
 
-**For context**: This bounded context specification is part of the Integration Domain. See the [Integration Domain README](../README.md) for strategic guidance and domain-level patterns. The full architectural specification is in [hq-su5pt](../../../mayor/hq-su5pt-kraken-cex-integration.md).
+**For context**: This bounded context specification is part of the Integration Domain. See the [Integration Domain README](../README.md) for strategic guidance and domain-level patterns. The full architectural specification is in [Kraken CEX integration directive](../directives/kraken-cex-integration.md).
 
 ## Core Responsibilities
 
@@ -206,7 +206,7 @@ The Kraken Integration bounded context provides read-only access to Kraken centr
 ## Related Documentation
 
 - **[← Integration Domain README](../README.md)** - Domain overview and strategic guidance
-- **[hq-su5pt Architecture Directive](../../../mayor/hq-su5pt-kraken-cex-integration.md)** - Full architectural specification
+- **[Kraken CEX Integration Directive](../directives/kraken-cex-integration.md)** - Full architectural specification
 - **[Integration Patterns](../patterns.md)** - Apply domain patterns to this context
 - **[Resilience & Performance](../resilience-performance.md)** - Implement resilience strategies
 - **[Testing & Security](../testing-security.md)** - Apply testing and security standards

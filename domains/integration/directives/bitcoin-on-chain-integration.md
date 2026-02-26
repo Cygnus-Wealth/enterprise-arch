@@ -741,9 +741,9 @@ Following the Integration Domain testing pyramid:
 - **[Integration Patterns](../patterns.md)** — Anti-corruption layer, circuit breaker, retry, caching patterns
 - **[Resilience & Performance](../resilience-performance.md)** — Connection management and fallback strategies
 - **[Testing & Security](../testing-security.md)** — Testing pyramid and security requirements
-- **[en-o8w: Multi-Chain Wallet Unification](./en-o8w-multi-chain-wallet-unification.md)** — ChainFamily.BITCOIN definition, wallet detection mandate, routing placeholder
-- **[hq-onegb: Coinbase CEX Integration](./hq-onegb-coinbase-cex-integration.md)** — Reference directive format
-- **[hq-su5pt: Kraken CEX Integration](./hq-su5pt-kraken-cex-integration.md)** — Reference directive format
+- **[Multi-Chain Wallet Unification](./multi-chain-wallet-unification.md)** — ChainFamily.BITCOIN definition, wallet detection mandate, routing placeholder
+- **[Coinbase CEX Integration](./coinbase-cex-integration.md)** — Reference directive format
+- **[Kraken CEX Integration](./kraken-cex-integration.md)** — Reference directive format
 - **[Data Models](../../contract/bounded-contexts/data-models.md)** — Unified type definitions
 - **[Repository Organization](../../repository-organization.md)** — GitHub repo setup and topic tagging
 - **[Domain Contracts](../../contracts.md)** — Inter-domain communication contracts

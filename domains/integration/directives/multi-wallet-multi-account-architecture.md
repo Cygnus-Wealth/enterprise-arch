@@ -1133,5 +1133,5 @@ Phase 5 requires Phase 4.
 - **[CygnusWealth App](../domains/experience/bounded-contexts/cygnus-wealth-app.md)** — Current UI patterns and state management
 - **[Data Models](../domains/contract/bounded-contexts/data-models.md)** — Current shared types
 - **[Domain Contracts](../contracts.md)** — Current inter-domain contracts
-- **[en-p0ha: WebSocket-First Architecture](../mayor/en-p0ha-websocket-first-architecture.md)** — Live update infrastructure affected by account attribution
-- **[en-25w5: RPC Provider Fallback Chain](../mayor/rig/en-25w5-rpc-provider-fallback-chain.md)** — RPC infrastructure (unaffected)
+- **[WebSocket-First Architecture](./websocket-first-architecture.md)** — Live update infrastructure affected by account attribution
+- **[RPC Provider Fallback Chain](./rpc-provider-fallback-chain.md)** — RPC infrastructure (unaffected)

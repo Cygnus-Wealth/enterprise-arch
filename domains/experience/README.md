@@ -12,7 +12,7 @@ This domain represents the user's window into the CygnusWealth system. It transl
 
 Architecture directives and recommendations for this domain:
 
-- [cy-ehma](./directives/cy-ehma-dashboard-token-discovery-analysis.md) — Dashboard token discovery failure analysis
+- [Dashboard token discovery failure analysis](./directives/dashboard-token-discovery-analysis.md)
 
 ## Bounded Contexts
 
