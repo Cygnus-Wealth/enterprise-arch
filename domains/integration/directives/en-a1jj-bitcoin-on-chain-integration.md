@@ -78,7 +78,7 @@ This preserves the unified portfolio model while capturing Bitcoin's native data
 | **Bech32** (Native SegWit) | `bc1q` | `bc1qw508d6qejxtdg4y5r3zarvary0c5xw7kv8f3t4` | BIP-84 |
 | **Bech32m** (Taproot) | `bc1p` | `bc1p5cyxnuxmeuwuvkwfem96lqzszee02lescdyuxqdl...` | BIP-86 |
 
-**Rationale**: All four formats are in active use. Modern wallets (Xverse, Unisat, Leather) may expose Taproot addresses by default while legacy wallets still use P2PKH. The integration must handle all formats to avoid silently missing balances.
+**Rationale**: All four formats are in active use. Modern wallets may expose Taproot addresses by default while legacy wallets still use P2PKH. The integration must handle all formats to avoid silently missing balances.
 
 ### 2.3 Data Source Strategy
 
@@ -102,23 +102,54 @@ This preserves the unified portfolio model while capturing Bitcoin's native data
 
 **Future work**: A separate directive can define Ordinals/BRC-20/Runes support as an extension to this bounded context, once the ecosystem and indexing infrastructure stabilize.
 
-### 2.5 Wallet Detection Approach
+### 2.5 Bitcoin Address Discovery Strategy
 
-**Decision**: Use wallet-specific global injection detection, as mandated by en-o8w for Bitcoin wallets (no finalized standard exists).
+**Decision**: Use a tiered discovery strategy that reflects the reality of BTC dapp API support in multi-chain wallets.
 
-**Known Bitcoin wallet injection points**:
+**Context**: Most multi-chain wallets (Coinbase Wallet, Trust Wallet) hold BTC internally but expose **no Bitcoin dapp API** to web applications. Only Phantom currently provides a direct BTC provider. The strategy must account for this gap without pretending broad programmatic access exists.
 
-| Wallet | Global Object | Multi-Chain | Notes |
-|--------|--------------|-------------|-------|
-| **Xverse** | `window.XverseProviders.BitcoinProvider` | Yes (BTC + STX) | Also registers via Wallet Standard for STX |
-| **Unisat** | `window.unisat` | No (BTC only) | Exposes `getAccounts()`, `getBalance()` |
-| **Leather (Hiro)** | `window.LeatherProvider` or `window.HiroWalletProvider` | Yes (BTC + STX) | Formerly Hiro Wallet |
-| **Phantom** | `window.phantom.bitcoin` | Yes (EVM + SOL + BTC) | Detected via EIP-6963/Wallet Standard for other chains; BTC sub-provider at `phantom.bitcoin` |
-| **OKX Wallet** | `window.okxwallet.bitcoin` | Yes (multi-chain) | BTC sub-provider under okxwallet namespace |
+#### Discovery Tiers
 
-**Correlation with en-o8w**: For multi-chain wallets (Phantom, Xverse), the WalletIntegration domain correlates the Bitcoin provider detection with EIP-6963/Wallet Standard providers from the same wallet. This produces a unified `DiscoveredWallet` entry. Domain Arch for WalletIntegration determines the specific correlation heuristics.
+| Tier | Method | Wallets | Access Level |
+|------|--------|---------|-------------|
+| **Tier 1: Direct Provider** | Wallet injects a Bitcoin-specific provider API | Phantom (`window.phantom.bitcoin`) | Full programmatic: `requestAccounts()`, address retrieval, message signing |
+| **Tier 2: WalletConnect v2 bip122** | BTC addresses obtained via WC v2 session with `bip122` as optional namespace | Any wallet that adds bip122 WC v2 support (none currently; spec exists, adoption expected) | Session-based: address discovery, potentially `signPsbt`/`sendTransfer` |
+| **Tier 3: Manual Watch-Only** | User manually enters a Bitcoin address or xpub-derived address | Coinbase Wallet (Onchain), Trust Wallet, hardware wallets (Ledger, Trezor, Coldcard), any wallet with no dapp API | Read-only: address known, balance fetched via public API, no signing |
 
-**Fallback**: If no Bitcoin-specific injection is detected, users can manually add Bitcoin addresses as watch-only. This is a common pattern since many users hold BTC in hardware wallets (Ledger, Trezor, Coldcard) that don't inject browser providers.
+#### Wallet BTC Dapp API Reality
+
+| Wallet | Holds BTC | BTC Dapp API | Detection | Discovery Tier |
+|--------|-----------|-------------|-----------|---------------|
+| **Phantom** | Yes | Yes — `window.phantom.bitcoin.requestAccounts()` | Direct provider probe | Tier 1 |
+| **Coinbase Wallet (Onchain)** | Yes | No — injects EVM/Solana providers only | None (no BTC API surface) | Tier 3 (manual) |
+| **Trust Wallet** | Yes | No — injects `ethereum`, `solana`, `cosmos`, `aptos` only; no `trustwallet.bitcoin` | None (no BTC API surface) | Tier 3 (manual) |
+
+#### Tier 1: Direct Provider Detection
+
+Only probe for wallets with confirmed BTC dapp APIs:
+
+```
+window.phantom.bitcoin        → Phantom BTC provider
+  .requestAccounts()          → Returns Bitcoin address(es)
+```
+
+**Correlation with en-o8w**: Phantom is already detected via EIP-6963 for EVM and Wallet Standard for Solana. The BTC sub-provider at `window.phantom.bitcoin` correlates with those existing `DiscoveredWallet` entries, producing a unified multi-chain wallet entry with `supportedChainFamilies` including `'bitcoin'`.
+
+#### Tier 2: WalletConnect v2 bip122 (Future-Proofing)
+
+See **Section 2.7** for the full WalletConnect v2 bip122 strategy.
+
+#### Tier 3: Manual Watch-Only
+
+The primary path for wallets that hold BTC but provide no dapp API (Coinbase Wallet, Trust Wallet) and for hardware wallets (Ledger, Trezor, Coldcard). The user provides a Bitcoin address directly. The address validator confirms the format before adding. Once an address is known, balance fetching uses public block explorer APIs — no wallet provider is needed for read-only data.
+
+#### Key Insight: Address Discovery vs Balance Fetching
+
+The wallet provider is only needed for **address discovery** — learning which Bitcoin addresses the user controls. Once an address is known (by any tier), **balance fetching is entirely chain-specific**: public Electrum/Mempool.space/Blockstream APIs provide UTXOs and balances for any address. This means:
+
+- Tier 1 and Tier 2 automate address discovery (user doesn't manually enter addresses)
+- Tier 3 requires manual address entry but provides identical read-only balance data
+- The btc-integration bounded context treats all addresses identically regardless of discovery tier
 
 ### 2.6 Single-Address Model (No xpub/HD Wallet Derivation)
 
@@ -127,6 +158,48 @@ This preserves the unified portfolio model while capturing Bitcoin's native data
 **Rationale**: Exposing an xpub allows anyone to derive all past and future addresses in the wallet, which is a significant privacy concern. CygnusWealth's read-only, client-side model means the user provides addresses explicitly (via wallet injection or manual entry). The integration tracks exactly the addresses it is given — it does not derive additional addresses from HD wallet paths.
 
 **Implication**: If a user's wallet has spread funds across many derived addresses, only the addresses explicitly provided will be tracked. This is an acceptable trade-off for privacy. The UX layer can inform users about this limitation and suggest adding all active addresses.
+
+### 2.7 WalletConnect v2 bip122 Strategy
+
+**Decision**: Include `bip122` as an **optional namespace** in WalletConnect v2 session proposals. This future-proofs Bitcoin address discovery without breaking EVM/Solana session establishment.
+
+**Context**: The WalletConnect v2 protocol supports the `bip122` namespace (CAIP-2 for Bitcoin) with defined methods. Currently, no major multi-chain wallet responds to `bip122` session proposals over WC v2, but the specification exists and adoption is expected as wallets add Bitcoin dapp support.
+
+#### WC v2 bip122 Namespace
+
+| Property | Value |
+|----------|-------|
+| **Namespace** | `bip122` |
+| **Chain ID** | `bip122:000000000019d6689c085ae165831e93` (Bitcoin mainnet genesis hash) |
+| **Methods** | `getAccountAddresses`, `signPsbt`, `signMessage`, `sendTransfer` |
+| **Events** | `accountsChanged` |
+
+#### Session Proposal Strategy
+
+```
+requiredNamespaces: {
+  eip155: { ... }           // EVM chains (always required)
+}
+optionalNamespaces: {
+  solana: { ... },          // Solana (optional)
+  bip122: {                 // Bitcoin (optional)
+    chains: ["bip122:000000000019d6689c085ae165831e93"],
+    methods: ["getAccountAddresses", "signPsbt", "signMessage", "sendTransfer"],
+    events: ["accountsChanged"]
+  }
+}
+```
+
+**Critical**: `bip122` goes in `optionalNamespaces`, never `requiredNamespaces`. If placed in required, wallets that don't support bip122 will reject the entire session — breaking EVM/Solana connectivity.
+
+#### Handling the Session Response
+
+- **Wallet supports bip122**: The session `namespaces` response includes `bip122` with accounts. Extract BTC addresses from the session (format: `bip122:000000000019d6689c085ae165831e93:{address}`). Store as `ConnectedAccount` entries with `chainFamily: 'bitcoin'`.
+- **Wallet ignores bip122**: The session establishes without `bip122` in the response namespaces. No BTC addresses available via this path — user falls through to Tier 3 (manual entry) for Bitcoin.
+
+#### CygnusWealth-Only Methods
+
+For CygnusWealth's read-only use case, only `getAccountAddresses` is needed (address discovery). The signing methods (`signPsbt`, `signMessage`, `sendTransfer`) are included in the proposal for specification completeness but are not invoked by the portfolio tracking application.
 
 ---
 
@@ -529,22 +602,48 @@ From existing architecture: "Prefer on-chain data over CEX data." Bitcoin on-cha
 
 ### Detection (WalletIntegration Domain)
 
-Per en-o8w, Bitcoin wallet detection uses wallet-specific global injection probing. The WalletIntegration domain:
+Per Section 2.5, Bitcoin address discovery uses a tiered approach reflecting actual BTC dapp API availability:
 
-1. Probes known injection points (`window.unisat`, `window.phantom.bitcoin`, `window.XverseProviders.BitcoinProvider`, etc.)
-2. Correlates Bitcoin providers with EIP-6963/Wallet Standard providers from the same wallet (for multi-chain wallets like Phantom)
-3. Produces `DiscoveredWallet` entries with `supportedChainFamilies` including `'bitcoin'`
+**Tier 1 — Direct Provider Probe:**
+1. Probe `window.phantom.bitcoin` for Phantom's BTC provider
+2. If found, correlate with Phantom's existing EIP-6963/Wallet Standard entries (EVM, Solana)
+3. Produce unified `DiscoveredWallet` entry with `supportedChainFamilies` including `'bitcoin'`
 
-### Connection Flow
+**Tier 2 — WalletConnect v2 bip122:**
+1. Include `bip122` in `optionalNamespaces` of WC v2 session proposals (see Section 2.7)
+2. If a wallet responds with `bip122` accounts in the session, extract BTC addresses
+3. Store as `ConnectedAccount` entries with `chainFamily: 'bitcoin'`
 
-1. User selects a discovered wallet with Bitcoin support
-2. WalletIntegration calls the wallet's `getAccounts()` (or equivalent) to retrieve Bitcoin addresses
-3. Addresses are stored as `ConnectedAccount` entries with `chainFamily: 'bitcoin'`
-4. PortfolioAggregation receives `TrackedAddress[]` with `chainFamily: 'bitcoin'` and routes to btc-integration
+**Tier 3 — Manual Watch-Only:**
+1. User manually enters a Bitcoin address
+2. Address validator confirms the format (P2PKH, P2SH, bech32, bech32m)
+3. Stored as a watch-only `ConnectedAccount` with `chainFamily: 'bitcoin'`
 
-### Watch-Only Addresses
+### Connection Flow by Tier
 
-Users can manually add Bitcoin addresses as watch-only (no wallet connection required). This is the primary path for hardware wallet users. The address validator confirms the format before adding.
+#### Tier 1 (Phantom Direct)
+
+1. User selects Phantom (discovered via EIP-6963 with Bitcoin support indicated)
+2. WalletIntegration calls `window.phantom.bitcoin.requestAccounts()` to retrieve Bitcoin addresses
+3. Addresses stored as `ConnectedAccount` entries with `chainFamily: 'bitcoin'`
+4. PortfolioAggregation receives `TrackedAddress[]` and routes to btc-integration
+
+#### Tier 2 (WalletConnect v2)
+
+1. User connects a wallet via WalletConnect v2
+2. Session proposal includes `bip122` in `optionalNamespaces`
+3. If wallet responds with bip122 accounts, addresses are extracted and stored as `ConnectedAccount` entries
+4. Same routing to btc-integration as Tier 1
+
+#### Tier 3 (Manual Entry)
+
+1. User manually adds a Bitcoin address (or multiple addresses)
+2. No wallet provider interaction — addresses go directly to `ConnectedAccount` storage
+3. Balance fetching proceeds via public block explorer APIs (no wallet provider needed for read-only data)
+
+### Watch-Only Is the Default Path
+
+Unlike EVM and Solana (where most wallets inject dapp APIs), the majority of BTC-holding wallets have no web dapp interface. Watch-only manual entry is the **primary** Bitcoin onboarding path, not a fallback. The UX should present it prominently alongside wallet detection results.
 
 ### AccountId Format
 
